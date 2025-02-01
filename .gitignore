@@ -1,4 +1,5 @@
-mLRS-Flasher.ini
+mLRS_Flasher.ini
+temp/*
 
 # Prerequisites
 *.d
