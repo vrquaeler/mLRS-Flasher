@@ -90,9 +90,9 @@ STLink Flashing Tools
 
 def flashSTM32CubeProgrammer(programmer, firmware):
     if sys.platform.lower() == 'darwin':
-        ST_Programmer = os.path.join('third_party','STM32CubeProgrammer','mac','bin','STM32_Programmer_CLI')
+        ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','mac','bin','STM32_Programmer_CLI')
     else:
-        ST_Programmer = os.path.join('third_party','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
+        ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
     if 'dfu' in programmer:
         #os_system([ST_Programmer, '-c port=usb1', '-w "'+firmware+'"', '-v', '-g'])
         os_system(ST_Programmer + ' -c port=usb1 -w "'+firmware+'" -v -g')
@@ -262,7 +262,7 @@ def flash_esp32(firmware, radioport, baudrate = 115200):
     #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
 
     # TODO: can we catch if this was succesful?
-    os_system(os.path.join('third_party','esptool','esptool.py') + ' ' + args)
+    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + args)
 
     print()
     print('*** DONE ***')
@@ -293,7 +293,7 @@ def flash_esp8266_wirelessbridge(firmware, radioport, baudrate = 115200):
     print(args)
     #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
 
-    os_system(os.path.join('third_party','esptool','esptool.py') + ' ' + args)
+    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + args)
 
     print()
     print('*** DONE ***')
