@@ -91,6 +91,8 @@ STLink Flashing Tools
 def flashSTM32CubeProgrammer(programmer, firmware):
     if sys.platform.lower() == 'darwin':
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','mac','bin','STM32_Programmer_CLI')
+    elif sys.platform.lower() == 'linux':
+        ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','linux','bin','STM32_Programmer_CLI')
     else:
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
     if 'dfu' in programmer:
