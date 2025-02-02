@@ -4,6 +4,25 @@
 
 Link to the [mLRS project](https://github.com/olliw42/mLRS).
 
+
+## Installation ##
+
+### Windows ###
+
+Download the file mLRS_Flasher.zip from the "app_windows" folder and store it to somewhere on your drive. Unpack it, and run mLRS_Flasher.exe.
+
+You can create a desktop shortcut to this file for easier access also.
+
+
+### MacOS ###
+
+TBD
+
+### Linux ###
+
+TBD
+
+
 ## Disclaimer ##
 
 You of course use the app fully at your own risk.
