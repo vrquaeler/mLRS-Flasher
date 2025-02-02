@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #*******************************************************
 # mLRS Flasher Desktop App
-# 1. Feb. 2025 001
+# 2. Feb. 2025 001
 #********************************************************
-app_version = '1.02.2025-001'
+app_version = '2.02.2025-001'
 
 import os, sys, time
 import subprocess
@@ -813,6 +813,7 @@ class App(ctk.CTk):
 
         self.title('mLRS Flasher Desktop App '+app_version)
         self.geometry('700x500')
+        self.iconbitmap(os.path.join('assets','mLRS_logo_round.ico'))
 
         #-- set grid layout 1x2
         self.grid_rowconfigure(0, weight=1)
