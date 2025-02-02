@@ -1,5 +1,10 @@
 mLRS_Flasher.ini
+z_cmd.bat
 temp/*
+build/*
+dist/*
+win_build/*
+win_dist/*
 
 # Prerequisites
 *.d
