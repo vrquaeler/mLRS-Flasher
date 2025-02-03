@@ -2,6 +2,7 @@
 
 
 appname = 'mLRS_Flasher'
+path = '../'
 
 print('------------------------------------------------\n')
 print(' pyinstaller builds '+appname+'\n')
@@ -12,28 +13,31 @@ block_cipher = None
 
 
 a = Analysis(
-    [appname+'.py'],
+    [path + appname+'.py'],
     pathex=[],
     binaries=[],
     datas=[
-		('assets' , 'assets'), 
-		('thirdparty/esptool' , 'thirdparty/esptool'), 
-		('thirdparty/STM32CubeProgrammer/win' , 'thirdparty/STM32CubeProgrammer/win'),
-		],
+        (path + 'assets' , 'assets'),
+        (path + 'thirdparty/esptool' , 'thirdparty/esptool'),
+        (path + 'thirdparty/STM32CubeProgrammer/win' , 'thirdparty/STM32CubeProgrammer/win'),
+		# important: pyinstaller ssems to not be able to inlcude CustomTkInter
+		# https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
+		('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter')
+        ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-	    'bcrypt',
-		#'certifi', #is required
-		'cryptography',
-		'docutils',
-		'numpy',
-		'markupsafe',
-		'scipy',
-		'matplotlib'
-		],
+        'bcrypt',
+        #'certifi', #is required
+        'cryptography',
+        'docutils',
+        'numpy',
+        'markupsafe',
+        'scipy',
+        'matplotlib'
+        ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -50,9 +54,9 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=True, # using False would be nice and possible, but we then need to improve the calling of external programs a bit more
-	icon='assets/mLRS_logo_round.ico', # doesn't work for some reason
+    icon = path + 'assets/mLRS_logo_round.ico', # doesn't work for some reason
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -65,7 +69,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name=appname,
 )

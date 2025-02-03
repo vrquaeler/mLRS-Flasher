@@ -56,6 +56,7 @@ def os_system(arg):
         os.system("pause")
         exit(1)
 
+'''
 python_cmd = '' # 'python' or 'python3' depending on installation
 
 def _check_python_version(required_version):
@@ -80,6 +81,7 @@ def check_python():
         exit(1)
 
 check_python()
+'''
 
 
 '''
