@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #*******************************************************
 # mLRS Flasher Desktop App
-# 4. Feb. 2025 001
+# 10. Feb. 2025 001
 #********************************************************
-app_version = '4.02.2025-001'
+app_version = '10.02.2025-001'
 
 import os, sys, time
 import subprocess
@@ -54,7 +54,7 @@ STLink Flashing Tools
 --------------------------------------------------
 '''
 
-def flashSTM32CubeProgrammer(programmer, firmware):
+def flash_stm32cubeprogrammer(programmer, firmware):
     if sys.platform.lower() == 'darwin':
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','mac','bin','STM32_Programmer_CLI')
     elif sys.platform.lower() == 'linux':
@@ -64,11 +64,109 @@ def flashSTM32CubeProgrammer(programmer, firmware):
     if 'dfu' in programmer:
         #os_system([ST_Programmer, '-c port=usb1', '-w "'+firmware+'"', '-v', '-g'])
         os_system(ST_Programmer + ' -c port=usb1 -w "'+firmware+'" -v -g')
-        print('# DONE #')
     else:
         os_system(ST_Programmer + ' -c port=SWD freq=3900 -w "'+firmware+'" -v -g')
-        print('# DONE #')
 
+
+def flashSTM32CubeProgrammer(programmer, firmware):
+    flash_stm32cubeprogrammer(programmer, firmware)
+    print()
+    print('*** DONE ***')
+    print()
+    print('Cheers, and have fun.')
+
+
+'''
+--------------------------------------------------
+ESP32 Flashing Tools
+--------------------------------------------------
+'''
+
+def flash_esptool(programmer, firmware, comport, baudrate):
+    assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
+    if 'esp32' in programmer:
+        args = (
+            '--chip esp32' + ' ' +
+            '--port "' + comport + '" ' +
+            '--baud ' + str(baudrate) + ' ' +
+            '--before default_reset' + ' ' +
+            '--after hard_reset write_flash' + ' ' +
+            '-z' + ' ' +
+            '--flash_mode dio' + ' ' +
+            '--flash_freq 40m' + ' ' +
+            '--flash_size 4MB 0x1000' + ' ' +
+            '"' + os.path.join(assets_path,'esp32','bootloader.bin') + '" ' +
+            '0x8000' + ' ' +
+            '"' + os.path.join(assets_path,'esp32','partitions.bin') + '" ' +
+            '0xe000' + ' ' +
+            '"' + os.path.join(assets_path,'esp32','boot_app0.bin') + '" ' +
+            '0x10000' + ' ' +
+            '"' + firmware + '"'
+            )
+    elif 'esp8266' in programmer:
+        args = (
+            '--chip esp8266' + ' ' +
+            '--port "' + comport + '" ' +
+            '--baud ' + str(baudrate) + ' ' +
+            '--before no_reset' + ' ' +
+            '--after soft_reset' + ' ' +
+            'write_flash' + ' ' +
+            '0x0' + ' ' +
+            '"' + firmware + '"'
+            )
+    print(args)
+    #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
+
+    # TODO: can we catch if this was succesful?
+    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + args)
+
+
+# RadioMaster Bandit, BetaFPV1WMicro seem to use a CP210x usb-ttl adapter
+def find_esp_device_serial_ports():
+    try:
+        from serial.tools.list_ports import comports
+        portList = list(comports())
+    except:
+        print('ERROR: find_esp_device_serial_ports() [1]')
+        return None
+    deviceportList = []
+    for port in portList:
+        if not 'USB' in port.hwid:
+            continue
+        if port.vid == 0x0483 and port.pid == 0x374E: # this is STLink
+            continue
+        if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx
+            continue
+        if port.vid == 0x1209 and port.pid == 0x5740: # this is ArduPilot
+            continue
+        if not 'Silicon Labs CP210x' in port.description:
+            continue
+        deviceportList.append(port.device)
+        #print('*',port.device, port.name, port.description)
+        #print(' ',port.hwid, port.vid, port.pid)
+        #print(' ',port.manufacturer, port.location, port.product, port.interface)
+    return deviceportList
+
+
+def flashEspToolProgrammer(programmer, firmware, comport):
+    # firmware filename gives the complete path
+    #print('flashEspToolProgrammer()')
+    #print(programmer)
+    #print(firmware)
+    #radioport = open_passthrough(baudrate)
+    #flash_esp32(firmware, radioport, baudrate)
+    #find_esp_device_serial_ports()
+    
+    baudrate = 921600
+    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+    flash_esptool(programmer, os.path.join(temp_path, firmware), comport, baudrate)
+
+    print()
+    print('*** DONE ***')
+    print()
+    print('Please remove the USB cable.')
+    print('Cheers, and have fun.')
+    
 
 '''
 --------------------------------------------------
@@ -205,32 +303,9 @@ def flash_esp32(firmware, radioport, baudrate = 115200):
     print()
     print('The firmware to flash is:', firmware)
 
-    assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
     temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-
-    args = (
-        '--chip esp32' + ' ' +
-        '--port "' + radioport + '" ' +
-        '--baud ' + str(baudrate) + ' ' +
-        '--before default_reset' + ' ' +
-        '--after hard_reset write_flash' + ' ' +
-        '-z' + ' ' +
-        '--flash_mode dio' + ' ' +
-        '--flash_freq 40m' + ' ' +
-        '--flash_size 4MB 0x1000' + ' ' +
-        '"' + os.path.join(assets_path,'esp32','bootloader.bin') + '" ' +
-        '0x8000' + ' ' +
-        '"' + os.path.join(assets_path,'esp32','partitions.bin') + '" ' +
-        '0xe000' + ' ' +
-        '"' + os.path.join(assets_path,'esp32','boot_app0.bin') + '" ' +
-        '0x10000' + ' ' +
-        '"' + os.path.join(temp_path, firmware) + '"'
-        )
-    print(args)
-    #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
-
-    # TODO: can we catch if this was succesful?
-    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + args)
+    # TODO: can we catch if this was succesfull?
+    flash_esptool('esp32', os.path.join(temp_path, firmware), radioport, baudrate)
 
     print()
     print('*** DONE ***')
@@ -245,23 +320,9 @@ def flash_esp8266_wirelessbridge(firmware, radioport, baudrate = 115200):
     print()
     print('The firmware to flash is:', firmware)
 
-    assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
     temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-
-    args = (
-        '--chip esp8266' + ' ' +
-        '--port "' + radioport + '" ' +
-        '--baud ' + str(baudrate) + ' ' +
-        '--before no_reset' + ' ' +
-        '--after soft_reset' + ' ' +
-        'write_flash' + ' ' +
-        '0x0' + ' ' +
-        '"' + os.path.join(assets_path,'wirelessbridge-esp8266',firmware) + '"'
-        )
-    print(args)
-    #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
-
-    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + args)
+    # TODO: can we catch if this was succesfull?
+    flash_esptool('esp8266', os.path.join(assets_path,'wirelessbridge-esp8266',firmware), radioport, baudrate)
 
     print()
     print('*** DONE ***')
@@ -273,7 +334,7 @@ def flash_esp8266_wirelessbridge(firmware, radioport, baudrate = 115200):
 def flashInternalElrsTxModule(programmer, firmware):
     # firmware filename gives the complete path
     #print(filename)
-    print(programmer)
+    #print(programmer)
     baudrate = 921600
     radioport = open_passthrough(baudrate)
     flash_esp32(firmware, radioport, baudrate)
@@ -284,7 +345,6 @@ def flashInternalElrsTxModuleWirelessBridge(programmer, firmware):
     baudrate = 115200
     radioport = open_passthrough(baudrate, wirelessbridge = True)
     flash_esp8266_wirelessbridge(firmware, radioport, baudrate)
-
 
 
 '''
@@ -300,19 +360,31 @@ g_LuaScript_minimal_version = 'v1.3.00'
 
 
 # this is easy enough to maintain by hand for the moment
-g_deviceTypeDict = {
-    'MatekSys' : 'matek',
-    'FrSky R9' : 'R9',
-    'FlySky FRM 303' : 'FRM303',
-    'Wio E5' : 'Wio-E5',
-    'E77 MBL Kit' : 'E77-MBLKit',
-    'Easysolder' : 'easysolder'
+
+g_txModuleExternalDeviceTypeDict = {
+    'MatekSys' :       { 'fname' : 'matek',       'chipset' : 'stm32' },
+    'FrSky R9' :       { 'fname' : 'R9',          'chipset' : 'stm32' },
+    'FlySky FRM 303' : { 'fname' : 'FRM303',      'chipset' : 'stm32' },
+    'Wio E5' :         { 'fname' : 'Wio-E5',      'chipset' : 'stm32' },
+    'E77 MBL Kit' :    { 'fname' : 'E77-MBLKit',  'chipset' : 'stm32' },
+    'Easysolder' :     { 'fname' : 'easysolder',  'chipset' : 'stm32' },
+    'RadioMaster' :    { 'fname' : 'radiomaster', 'chipset' : 'esp32' },
+    'BetaFPV' :        { 'fname' : 'betafpv',     'chipset' : 'esp32' },
 }
 
+g_receiverDeviceTypeDict = {
+    'MatekSys' :       { 'fname' : 'matek',       'chipset' : 'stm32' },
+    'FrSky R9' :       { 'fname' : 'R9',          'chipset' : 'stm32' },
+    'FlySky FRM 303' : { 'fname' : 'FRM303',      'chipset' : 'stm32' },
+    'Wio E5' :         { 'fname' : 'Wio-E5',      'chipset' : 'stm32' },
+    'E77 MBL Kit' :    { 'fname' : 'E77-MBLKit',  'chipset' : 'stm32' },
+    'Easysolder' :     { 'fname' : 'easysolder',  'chipset' : 'stm32' },
+}
 
 g_txModuleInternalDeviceTypeDict = {
-    'Jumper (T20, T20 V2, T15, T14, T-Pro S)' : 'jumper-internal',
-    'RadioMaster (TX16S, TX12, MT12, Zorro, Pocket)' : 'radiomaster-internal',
+    'Jumper (T20, T20 V2, T15, T14, T-Pro S)' :        { 'fname' : 'jumper-internal',            'chipset' : 'esp32' },
+    'RadioMaster (TX16S, TX12, MT12, Zorro, Pocket)' : { 'fname' : 'radiomaster-internal-2400',  'chipset' : 'esp32' },
+    #'RadioMaster (Boxer)' :                            { 'fname' : 'radiomaster-internal-boxer', 'chipset' : 'esp32' },
 }
 
 
@@ -359,15 +431,18 @@ def requestData(url, error_msg=''):
 
 # API for app
 def getDevicesDict(txorrxortxint):
+    if txorrxortxint == 'tx':
+        return g_txModuleExternalDeviceTypeDict
     if txorrxortxint == 'tx int':
         return g_txModuleInternalDeviceTypeDict
     else:
-        return g_deviceTypeDict
+        return g_receiverDeviceTypeDict
 
 
 # API for app
 def getVersionsDict():
     # download mlrs_firmware_urls.json
+    # it holds the "released" versions, i.e., all non-dev versions
     url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/tools/web/mlrs_firmware_urls.json'
     res = requestJsonDict(url, 'ERROR: getVersionsDict() [1]')
     if not res:
@@ -418,12 +493,14 @@ def getVersionsDict():
 
     # firmware_filename looks like pre-release-stm32/rx-E77-MBLKit-wle5cc-400-tcxo-v1.3.01-@ae667b78.hex
     # find one file with a -@ in the name, and asumme it is representative for all dev versions
+    # this means in all firmware/ subfolders only equal -@ must appear
     # regex to get version and commit
     for key in resMainFirmwareList:
         if '-@' in key['path']: # this is one
             #print('we got one')
             #print(key)
-            f = re.search(r'-(v\d\.\d+?\.\d+?-@[A-Za-z0-9]+?)\.', key['path'])
+            #print(key['path'])
+            f = re.search(r'-(v\d\.\d+?\.\d+?-@[A-Za-z0-9]+?)\.', key['path']) # TODO: doesn't correctly parse branch dev versions
             #print(f, f.group(1))
             if f:
                 resDict[f.group(1)] = {
@@ -440,10 +517,10 @@ def getVersionsDict():
 # Get files list from github repo, for a specifc tree, and filter according to what we want.
 # pass in a GitHub tree URL like https://api.github.com/repos/olliw42/mLRS/git/trees/f12d680?recursive=true
 # this is needed to get the list of files from the location which is specific to the version
-def getFilesListFromTree(txorrxortxintorlua, url, device=''):
+def getFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
     res = requestJsonDict(url, 'ERROR: getFilesListFromTree()')
     if not res:
-        return res
+        return None
     resList = res['tree'] # it's a list of dictionaries
     if txorrxortxintorlua == 'lua': # 'lua'
         for key in resList[:]: # creates a copy of the list, so we can easily remove
@@ -454,36 +531,52 @@ def getFilesListFromTree(txorrxortxintorlua, url, device=''):
             elif '.lua' not in key['path']: # only accept files with '.lua' extension
                 resList.remove(key)
     elif txorrxortxintorlua == 'tx int': # 'tx int'
-        #print(url, device)
+        if device == '' or version == '': print('ERROR: getFilesListFromTree() [2]')
+        #print(url, device, version)
         #print(resList)
         for key in resList[:]: # creates a copy of the list, so we can easily remove
+            #if 'firmware/' not in key['path']:
+            #    resList.remove(key)
             if key['type'] != 'blob':
                 resList.remove(key)
             elif '-stm32' in key['path']: # remove all files with '-stm32'
                 resList.remove(key)
             elif '-esp' not in key['path']: # only accept files with '-esp', should be redundant
                 resList.remove(key)
+            elif '-internal-' not in key['path']:
+                resList.remove(key)
+            elif version not in key['path']: # ensure we only have the desired firmware version
+                resList.remove(key)
             elif 'tx-'+device not in key['path']: # only accept tx-device-internal
                 resList.remove(key)
     else: # 'tx' or 'rx'
+        if device == '' or version == '': print('ERROR: getFilesListFromTree() [2]')
+        #print(url, device, version)
+        #print(resList)
         for key in resList[:]: # creates a copy of the list, so we can easily remove
-            if 'firmware/' not in key['path']:
+            #if 'firmware/' not in key['path']:
+            #    resList.remove(key)
+            if key['type'] != 'blob': # seems to not be needed, as all 'firmware/' seem to be blob
                 resList.remove(key)
-            elif key['type'] != 'blob': # seems to not be needed, as all 'firmware/' seem to be blob
+            #elif '-esp' in key['path']: # remove all files with '-esp'
+            #    resList.remove(key)
+            #elif '-stm32' not in key['path']: # only accept files with '-stm32', should be redundant
+            #    resList.remove(key)
+            elif '-internal-' in key['path']:
                 resList.remove(key)
-            elif '-esp' in key['path']: # remove all files with '-esp'
+            elif '-stm32' not in key['path'] and '-esp' not in key['path']: # only accept files with '-stm32' or '-esp'
                 resList.remove(key)
-            elif '-stm32' not in key['path']: # only accept files with '-stm32', should be redundant
+            elif version not in key['path']: # ensure we only have the desired firmware version
                 resList.remove(key)
             elif txorrxortxintorlua+'-'+device not in key['path']: # only accept tx-device-xxx or rx-device-xxx
                 resList.remove(key)
 
-    #import pprint
-    #F = open('filesfromtree-'+txorrxortxintorlua+'.txt', 'w')
-    #F.write(url)
-    #F.write('\n\r')
-    #F.write( pprint.pformat(resList) )
-    #F.close()
+    ''' import pprint
+    F = open('filesfromtree-'+txorrxortxintorlua+'.txt', 'w')
+    F.write(url)
+    F.write('\n\r')
+    F.write( pprint.pformat(resList) )
+    F.close() '''
 
     return resList
 
@@ -499,7 +592,7 @@ def getFileAndWriteToDisk(url, filename):
 
 
 # API for app
-def flashDevice(programmer, device, url, filename):
+def flashDevice(programmer, device, url, filename, comport=None):
     #print('flashDevice()')
     #print(device)
     #print(url)
@@ -521,6 +614,8 @@ def flashDevice(programmer, device, url, filename):
     elif 'esp32' in programmer:
         if 'internal' in programmer:
             flashInternalElrsTxModule(programmer, filepath)
+        else:
+            flashEspToolProgrammer(programmer, filepath, comport)
 
 
 '''
@@ -540,6 +635,28 @@ def version_str_to_int(v_str):
 CustomTKInter App
 --------------------------------------------------
 '''
+
+class CTkCompPortOptionMenu(ctk.CTkOptionMenu):
+    def __init__(self, master, porttype=None, **kwargs):
+        super().__init__(master=master, **kwargs)
+        self.porttype = porttype
+
+    def update(self):
+        sel = self.get()
+        portlist = find_esp_device_serial_ports()
+        if not portlist:
+            portlist = ['COM1']
+        #print(portlist)
+        self.configure(values=portlist, require_redraw=True)
+        if sel in portlist:
+            self.set(sel)
+        else:
+            self.set(portlist[0])
+
+    def _open_dropdown_menu(self):
+        self.update()
+        super()._open_dropdown_menu()
+        
 
 class App(ctk.CTk):
 
@@ -601,29 +718,33 @@ class App(ctk.CTk):
         if txorrxortxint == 'tx':
             if self.txDeviceTypeDict == None or self.firmwareVersionDict == None:
                 return ['download failed...']
-            device_type_f = self.txDeviceTypeDict[device_type] # that's the name of the device in the filename
+            device_type_f = self.txDeviceTypeDict[device_type]['fname'] # that's the name of the device in the filename
         elif txorrxortxint == 'rx':
             if self.rxDeviceTypeDict == None or self.firmwareVersionDict == None:
                 return ['download failed...']
-            device_type_f = self.rxDeviceTypeDict[device_type] # that's the name of the device in the filename
+            device_type_f = self.rxDeviceTypeDict[device_type]['fname'] # that's the name of the device in the filename
         elif txorrxortxint == 'tx int':
             if self.txIntDeviceTypeDict == None or self.firmwareVersionDict == None:
                 return ['download failed...']
-            device_type_f = self.txIntDeviceTypeDict[device_type] # that's the name of the device in the filename
+            device_type_f = self.txIntDeviceTypeDict[device_type]['fname'] # that's the name of the device in the filename
         firmware_version_gitUrl = self.firmwareVersionDict[firmware_version]['gitUrl']
         #print(device_type, device_type_f)
         #print(firmware_version, firmware_version_gitUrl)
+        res = getFilesListFromTree(txorrxortxint, firmware_version_gitUrl, device_type_f, firmware_version)
+        if res == None:
+            print('ERROR: _download_firmware_files() [1]')
+            return ['download failed...']
         if txorrxortxint == 'tx':
-            self.txFirmwareFilesList = getFilesListFromTree('tx', firmware_version_gitUrl, device_type_f) # must be self as list is needed later also
+            self.txFirmwareFilesList = res # must be self as list is needed later also
             firmwareFilesList = self.txFirmwareFilesList
         elif txorrxortxint == 'rx':
-            self.rxFirmwareFilesList = getFilesListFromTree('rx', firmware_version_gitUrl, device_type_f) # must be self as list is needed later also
+            self.rxFirmwareFilesList = res # must be self as list is needed later also
             firmwareFilesList = self.rxFirmwareFilesList
         elif txorrxortxint == 'tx int':
-            self.txIntFirmwareFilesList = getFilesListFromTree('tx int', firmware_version_gitUrl, device_type_f) # must be self as list is needed later also
+            self.txIntFirmwareFilesList = res # must be self as list is needed later also
             firmwareFilesList = self.txIntFirmwareFilesList
         else:
-            print('ERROR: _download_firmware_files() [1]')
+            print('ERROR: _download_firmware_files() [2]')
             return ['download failed...']
         #print(firmwareFilesList)
         if firmwareFilesList == None:
@@ -670,7 +791,7 @@ class App(ctk.CTk):
             return ['download failed...']
         firmware_version_gitUrl = self.firmwareVersionDict[firmware_version]['gitUrl']
         #print(firmware_version, firmware_version_gitUrl)
-        self.luaScriptFilesList = getFilesListFromTree('lua',firmware_version_gitUrl) # must be self as list is needed later also
+        self.luaScriptFilesList = getFilesListFromTree('lua', firmware_version_gitUrl) # must be self as list is needed later also
         #print(self.luaScriptFilesList)
         if self.luaScriptFilesList == None:
             return ['download failed...']
@@ -703,15 +824,25 @@ class App(ctk.CTk):
         if 'failed' in device_type or 'failed' in firmware_filename:
             print('ERROR: flashTxModuleExternalFirmware() [1]')
             return
+        #print(device_type, self.txDeviceTypeDict[device_type])
         #print(firmware_filename)
         #print(self.txFirmwareFilesList)
         for key in self.txFirmwareFilesList:
             if firmware_filename in key['path']: # that's our firmware entry
-                if 'MatekSys' in device_type:
-                    flashDevice('stm32 dfu', device_type, key['url'], firmware_filename)
-                else:
-                    flashDevice('stm32 stlink', device_type, key['url'], firmware_filename)
-                return
+                chipset = self.txDeviceTypeDict[device_type]['chipset']
+                #print(chipset)
+                if 'stm32' in chipset:
+                    if 'MatekSys' in device_type: # TODO: the flash method info needs to be per firmware/target!
+                        flashmethod = 'dfu'
+                    else:
+                        flashmethod = 'stlink'
+                    flashDevice(chipset + ' ' + flashmethod, device_type, key['url'], firmware_filename)
+                    return
+                elif 'esp32' in chipset:
+                    comport = self.fTxModuleExternal_ComPort_menu.get()
+                    print('--->',comport)
+                    flashDevice(chipset, device_type, key['url'], firmware_filename, comport=comport)
+                    return
         print('ERROR: flashTxModuleExternalFirmware() [2]')
 
     # calls flashDevice() for the selected device, firmware url, and filename, to initiate flashing
@@ -982,6 +1113,7 @@ class App(ctk.CTk):
 
     def initTxModuleExternalFrame(self):
         self.fTxModuleExternal = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.fTxModuleExternal.grid_columnconfigure(0, weight=0)
         self.fTxModuleExternal.grid_columnconfigure(1, weight=1)
 
         wrow = 0
@@ -1024,12 +1156,23 @@ class App(ctk.CTk):
         wrow += 1
 
         # Flash Button
-        self.fTxModuleExternal_Flash_button = ctk.CTkButton(self.fTxModuleExternal,
-            text = "Flash Tx Module",
-            command = self.fTxModuleExternal_Flash_button_event)
-        self.fTxModuleExternal_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
+        self.fTxModuleExternal_fFlash = ctk.CTkFrame(self.fTxModuleExternal, corner_radius=0, fg_color="transparent")
+        self.fTxModuleExternal_fFlash.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 
+        self.fTxModuleExternal_Flash_button = ctk.CTkButton(self.fTxModuleExternal_fFlash,
+            text = "Flash Tx Module",
+            command = self.fTxModuleExternal_Flash_button_event)
+        self.fTxModuleExternal_Flash_button.grid(row=0, column=0)
+        
+        self.fTxModuleExternal_ComPort_menu = CTkCompPortOptionMenu(self.fTxModuleExternal_fFlash,
+            porttype = 'eps32',
+            values=['COM1'],
+            width=10,
+            command=self.fTxModuleExternal_ComPort_menu_event)
+        self.fTxModuleExternal_ComPort_menu.grid(row=0, column=1, padx=20)
+        self.fTxModuleExternal_ComPort_menu.grid_remove() # grid_remove() memorizes settings, grid_forget() looses them
+        
         #-- Wireless Bridge --
 
         self.fTxModuleExternal_WirelessBridge_label = ctk.CTkLabel(self.fTxModuleExternal,
@@ -1046,11 +1189,21 @@ class App(ctk.CTk):
         self.fTxModuleExternal_WirelessBridgeFlash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 
-        self.fTxModuleExternal_WirelessBridge_label.grid_forget() # pack_forget() did not work!
-        self.fTxModuleExternal_WirelessBridgeFlash_button.grid_forget()
+        self.fTxModuleExternal_WirelessBridge_label.grid_remove() # pack_forget() did not work!
+        self.fTxModuleExternal_WirelessBridgeFlash_button.grid_remove()
+
+    def fTxModuleExternal_ComPort_HandleIt(self):
+        device_type = self.fTxModuleExternal_DeviceType_menu.get()
+        chipset = self.txDeviceTypeDict[device_type]['chipset']
+        if 'stm32' in chipset:
+            self.fTxModuleExternal_ComPort_menu.grid_remove()
+        elif 'esp32' in chipset:
+            self.fTxModuleExternal_ComPort_menu.update()
+            self.fTxModuleExternal_ComPort_menu.grid()
 
     def fTxModuleExternal_DeviceType_menu_event(self, opt):
         self.updateTxModuleExternalFirmwareFiles()
+        self.fTxModuleExternal_ComPort_HandleIt()
 
     def fTxModuleExternal_FirmwareVersion_menu_event(self, opt):
         self.updateTxModuleExternalFirmwareFiles()
@@ -1064,6 +1217,9 @@ class App(ctk.CTk):
     def fTxModuleExternal_WirelessBridgeFlash_button_event(self):
         pass
 
+    def fTxModuleExternal_ComPort_menu_event(self, opt):
+        pass
+
 
     #--------------------------------------------------
     #-- Receiver frame
@@ -1072,6 +1228,7 @@ class App(ctk.CTk):
     def initReceiverFrame(self):
         self.fReceiver = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.fReceiver.grid_columnconfigure(1, weight=1)
+        self.fReceiver.grid_columnconfigure(2, weight=0)
 
         wrow = 0
 
