@@ -24,7 +24,9 @@ a = Analysis(
 		# https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
 		('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter')
         ],
-    hiddenimports=[],
+    hiddenimports=[
+        'pyserial', # it seems pyinstaller cannot handle the fact that the module is pyserial butthe import is serial
+        ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

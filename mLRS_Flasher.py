@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #*******************************************************
 # mLRS Flasher Desktop App
-# 10. Feb. 2025 001
+# 11. Feb. 2025 001
 #********************************************************
-app_version = '10.02.2025-001'
+app_version = '11.02.2025-001'
 
 import os, sys, time
 import subprocess
@@ -23,6 +23,8 @@ import requests
 import json
 import base64
 import serial
+
+import assets.mLRS_metadata as mlrs_md
 
 
 ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -139,7 +141,7 @@ def find_esp_device_serial_ports():
             continue
         if port.vid == 0x1209 and port.pid == 0x5740: # this is ArduPilot
             continue
-        if 'CP210' not in port.description:
+        if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
             continue
         deviceportList.append(port.device)
         #print('*',port.device, port.name, port.description)
@@ -359,35 +361,6 @@ g_TxModuleInternal_minimal_version = 'v1.3.05'
 g_LuaScript_minimal_version = 'v1.3.00'
 
 
-# this is easy enough to maintain by hand for the moment
-
-g_txModuleExternalDeviceTypeDict = {
-    'MatekSys' :       { 'fname' : 'matek',       'chipset' : 'stm32' },
-    'FrSky R9' :       { 'fname' : 'R9',          'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'FRM303',      'chipset' : 'stm32' },
-    'Wio E5' :         { 'fname' : 'Wio-E5',      'chipset' : 'stm32' },
-    'E77 MBL Kit' :    { 'fname' : 'E77-MBLKit',  'chipset' : 'stm32' },
-    'Easysolder' :     { 'fname' : 'easysolder',  'chipset' : 'stm32' },
-    'RadioMaster' :    { 'fname' : 'radiomaster', 'chipset' : 'esp32' },
-    'BetaFPV' :        { 'fname' : 'betafpv',     'chipset' : 'esp32' },
-}
-
-g_receiverDeviceTypeDict = {
-    'MatekSys' :       { 'fname' : 'matek',       'chipset' : 'stm32' },
-    'FrSky R9' :       { 'fname' : 'R9',          'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'FRM303',      'chipset' : 'stm32' },
-    'Wio E5' :         { 'fname' : 'Wio-E5',      'chipset' : 'stm32' },
-    'E77 MBL Kit' :    { 'fname' : 'E77-MBLKit',  'chipset' : 'stm32' },
-    'Easysolder' :     { 'fname' : 'easysolder',  'chipset' : 'stm32' },
-}
-
-g_txModuleInternalDeviceTypeDict = {
-    'Jumper (T20, T20 V2, T15, T14, T-Pro S)' :        { 'fname' : 'jumper-internal',            'chipset' : 'esp32' },
-    'RadioMaster (TX16S, TX12, MT12, Zorro, Pocket)' : { 'fname' : 'radiomaster-internal-2400',  'chipset' : 'esp32' },
-    #'RadioMaster (Boxer)' :                            { 'fname' : 'radiomaster-internal-boxer', 'chipset' : 'esp32' },
-}
-
-
 def requestJsonDict(url, error_msg=''):
     try:
         res = requests.get(url, allow_redirects=True)
@@ -432,11 +405,11 @@ def requestData(url, error_msg=''):
 # API for app
 def getDevicesDict(txorrxortxint):
     if txorrxortxint == 'tx':
-        return g_txModuleExternalDeviceTypeDict
+        return mlrs_md.g_txModuleExternalDeviceTypeDict
     if txorrxortxint == 'tx int':
-        return g_txModuleInternalDeviceTypeDict
+        return mlrs_md.g_txModuleInternalDeviceTypeDict
     else:
-        return g_receiverDeviceTypeDict
+        return mlrs_md.g_receiverDeviceTypeDict
 
 
 # API for app
