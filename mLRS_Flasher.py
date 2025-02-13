@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #*******************************************************
 # mLRS Flasher Desktop App
-# 11. Feb. 2025 001
+# 13. Feb. 2025 001
 #********************************************************
-app_version = '11.02.2025-001'
+app_version = '13.02.2025-001'
 
 import os, sys, time
 import subprocess
@@ -105,15 +105,26 @@ def flash_esptool(programmer, firmware, comport, baudrate):
             '0x10000' + ' ' +
             '"' + firmware + '"'
             )
-    elif 'esp8266' in programmer:
+    elif ('esp8266' in programmer or 'esp8285' in programmer) and 'no dtr' in programmer:
         args = (
-            '--chip esp8266' + ' ' +
+            '--chip esp8266 ' +
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
-            '--before no_reset' + ' ' +
-            '--after soft_reset' + ' ' +
-            'write_flash' + ' ' +
-            '0x0' + ' ' +
+            '--before no_reset ' +
+            '--after soft_reset ' +
+            'write_flash ' +
+            '0x0 ' +
+            '"' + firmware + '"'
+            )
+    elif ('esp8266' in programmer or 'esp8285' in programmer): # 'dtr'
+        args = (
+            '--chip esp8266 ' +
+            '--port "' + comport + '" ' +
+            '--baud ' + str(baudrate) + ' ' +
+            '--before default_reset ' +
+            '--after hard_reset ' +
+            'write_flash ' +
+            '0x0 ' +
             '"' + firmware + '"'
             )
     print(args)
@@ -150,7 +161,7 @@ def find_esp_device_serial_ports():
     return deviceportList
 
 
-def flashEspToolProgrammer(programmer, firmware, comport):
+def flashEspToolProgrammer(programmer, firmware, comport, baudrate=921600):
     # firmware filename gives the complete path
     #print('flashEspToolProgrammer()')
     #print(programmer)
@@ -158,8 +169,8 @@ def flashEspToolProgrammer(programmer, firmware, comport):
     #radioport = open_passthrough(baudrate)
     #flash_esp32(firmware, radioport, baudrate)
     #find_esp_device_serial_ports()
-    
-    baudrate = 921600
+
+    #baudrate = 921600
     temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     flash_esptool(programmer, os.path.join(temp_path, firmware), comport, baudrate)
 
@@ -168,7 +179,7 @@ def flashEspToolProgrammer(programmer, firmware, comport):
     print()
     print('Please remove the USB cable.')
     print('Cheers, and have fun.')
-    
+
 
 '''
 --------------------------------------------------
@@ -197,140 +208,139 @@ def find_radio_serial_ports():
     return radioportList
 
 
-def do_msg(msg):
-    print(msg)
-    print('Press Enter to continue')
-    input()
+class InternalTx():
+    def do_msg(self, msg):
+        print(msg)
+        print('Press Enter to continue')
+        input()
 
+    def do_error(self, msg):
+        print(msg)
+        print('Press Enter to continue')
+        input()
+        exit(1)
 
-def do_error(msg):
-    print(msg)
-    print('Press Enter to continue')
-    input()
-    exit(1)
-
-
-def execute_cli_command(ser, cmd, expected=None, timeout=1.0):
-    ser.write(cmd+b'\n')
-    res = b''
-    tstart = time.perf_counter() #tstart = time.time()
-    while True:
-        tnow = time.perf_counter()
-        if tnow - tstart > timeout:
+    def execute_cli_command(self, ser, cmd, expected=None, timeout=1.0):
+        ser.write(cmd+b'\n')
+        res = b''
+        tstart = time.perf_counter() #tstart = time.time()
+        while True:
+            tnow = time.perf_counter()
+            if tnow - tstart > timeout:
+                return None
+            if ser.inWaiting() > 0:
+                res += ser.read(1)
+            if res[-4:] == b'\r\n> ': # we got it
+                break
+        #resList = res.split(b'\r\n')
+        #print(resList)
+        print(res)
+        if expected and not expected in res:
             return None
-        if ser.inWaiting() > 0:
-            res += ser.read(1)
-        if res[-4:] == b'\r\n> ': # we got it
-            break
-    #resList = res.split(b'\r\n')
-    #print(resList)
-    print(res)
-    if expected and not expected in res:
-        return None
-    return res
+        return res
 
+    def open_passthrough(self, baudrate = 115200, wirelessbridge = None):
+        print()
+        print('*** 1. Finding COM port of your radio ***')
+        print()
 
-def open_passthrough(baudrate = 115200, wirelessbridge = None):
-    print()
-    print('*** 1. Finding COM port of your radio ***')
-    print()
-
-    radioports_list = find_radio_serial_ports()
-    if len(radioports_list) != 1:
-        do_msg('Please power up your radio, connect the USB, and select "USB Serial (VCP)".')
         radioports_list = find_radio_serial_ports()
         if len(radioports_list) != 1:
-            do_error('Sorry, something went wrong and we could not find the com port of your radio.')
-    radioport = radioports_list[0]
-    print('Your radio is on com port', radioport)
+            do_msg('Please power up your radio, connect the USB, and select "USB Serial (VCP)".')
+            radioports_list = find_radio_serial_ports()
+            if len(radioports_list) != 1:
+                do_error('Sorry, something went wrong and we could not find the com port of your radio.')
+        radioport = radioports_list[0]
+        print('Your radio is on com port', radioport)
 
-    try:
-        s = serial.Serial(radioport)
-        s.close()
-    except:
-        do_error('Sorry, something went wrong and we could not open the com port of your radio.')
+        try:
+            s = serial.Serial(radioport)
+            s.close()
+        except:
+            do_error('Sorry, something went wrong and we could not open the com port of your radio.')
 
-    print()
-    print('*** 2. Opening passthrough to the internal Tx Module ***')
-    print()
+        print()
+        print('*** 2. Opening passthrough to the internal Tx Module ***')
+        print()
 
-    # This procedure seems to work independent on the selected Model
-    # Seems to also work fine when the internal module is OFF
+        # This procedure seems to work independent on the selected Model
+        # Seems to also work fine when the internal module is OFF
 
-    ser = serial.Serial(radioport, timeout=0)
-    ser.flush()
+        ser = serial.Serial(radioport, timeout=0)
+        ser.flush()
 
-    res = execute_cli_command(ser, b'set pulses 0', expected = b'pulses stop')
-    if not res:
-        res = execute_cli_command(ser, b'set pulses 0', expected = b'pulses stop') # give it a 2nd try
+        res = self.execute_cli_command(ser, b'set pulses 0', expected = b'pulses stop')
+        if not res:
+            res = self.execute_cli_command(ser, b'set pulses 0', expected = b'pulses stop') # give it a 2nd try
+            if not res:
+                do_error('Sorry, something went wrong.')
+
+        if not wirelessbridge:
+            res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
+            if not res:
+                do_error('Sorry, something went wrong.')
+            time.sleep(.1)
+
+        res = self.execute_cli_command(ser, b'set rfmod 0 power off')
+        if not res:
+            do_error('Sorry, something went wrong.')
+        time.sleep(1)
+        res = self.execute_cli_command(ser, b'set rfmod 0 power on')
+        if not res:
+            do_error('Sorry, something went wrong.')
+        time.sleep(1)
+
+        res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
+        if not res:
+            do_error('Sorry, something went wrong.')
+        time.sleep(1)
+        res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 0', expected = b'bootpin reset')
         if not res:
             do_error('Sorry, something went wrong.')
 
-    if not wirelessbridge:
-        res = execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
-        if not res:
-            do_error('Sorry, something went wrong.')
-        time.sleep(.1)
+        cmd = b'serialpassthrough rfmod 0 ' + str(baudrate).encode('utf-8') + b'\n'
+        ser.write(cmd)
+        print(cmd)
 
-    res = execute_cli_command(ser, b'set rfmod 0 power off')
-    if not res:
-        do_error('Sorry, something went wrong.')
-    time.sleep(1)
-    res = execute_cli_command(ser, b'set rfmod 0 power on')
-    if not res:
-        do_error('Sorry, something went wrong.')
-    time.sleep(1)
+        time.sleep(0.5)
+        ser.close()
 
-    res = execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
-    if not res:
-        do_error('Sorry, something went wrong.')
-    time.sleep(1)
-    res = execute_cli_command(ser, b'set rfmod 0 bootpin 0', expected = b'bootpin reset')
-    if not res:
-        do_error('Sorry, something went wrong.')
+        return radioport
 
-    cmd = b'serialpassthrough rfmod 0 ' + str(baudrate).encode('utf-8') + b'\n'
-    ser.write(cmd)
-    print(cmd)
+    def flash_esp32(self, firmware, radioport, baudrate = 115200):
+        print()
+        print('*** 3. Flashing the internal Tx Module ***')
+        print()
+        print('The firmware to flash is:', firmware)
 
-    time.sleep(0.5)
-    ser.close()
+        temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+        # TODO: can we catch if this was succesfull?
+        flash_esptool('esp32', os.path.join(temp_path, firmware), radioport, baudrate)
 
-    return radioport
+        print()
+        print('*** DONE ***')
+        print()
+        print('Please remove the USB cable.')
+        print('Cheers, and have fun.')
 
+    def flash_esp8266_wirelessbridge(self, firmware, radioport, baudrate = 115200):
+        print()
+        print('*** 3. Flashing the wireless bridge of the internal Tx Module ***')
+        print()
+        print('The firmware to flash is:', firmware)
 
-def flash_esp32(firmware, radioport, baudrate = 115200):
-    print()
-    print('*** 3. Flashing the internal Tx Module ***')
-    print()
-    print('The firmware to flash is:', firmware)
+        temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+        # TODO: can we catch if this was succesfull?
+        #flash_esptool('esp8266', os.path.join(assets_path,'wirelessbridge-esp8266',firmware), radioport, baudrate)
+        flash_esptool('esp8266', os.path.join(temp_path,firmware), radioport, baudrate)
 
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-    # TODO: can we catch if this was succesfull?
-    flash_esptool('esp32', os.path.join(temp_path, firmware), radioport, baudrate)
+        print()
+        print('*** DONE ***')
+        print()
+        print('Please remove the USB cable.')
+        print('Cheers, and have fun.')
 
-    print()
-    print('*** DONE ***')
-    print()
-    print('Please remove the USB cable.')
-    print('Cheers, and have fun.')
-
-
-def flash_esp8266_wirelessbridge(firmware, radioport, baudrate = 115200):
-    print()
-    print('*** 3. Flashing the internal Tx Module ***')
-    print()
-    print('The firmware to flash is:', firmware)
-
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-    # TODO: can we catch if this was succesfull?
-    flash_esptool('esp8266', os.path.join(assets_path,'wirelessbridge-esp8266',firmware), radioport, baudrate)
-
-    print()
-    print('*** DONE ***')
-    print()
-    print('Please remove the USB cable.')
-    print('Cheers, and have fun.')
+internalTx = InternalTx()
 
 
 def flashInternalElrsTxModule(programmer, firmware):
@@ -338,15 +348,15 @@ def flashInternalElrsTxModule(programmer, firmware):
     #print(filename)
     #print(programmer)
     baudrate = 921600
-    radioport = open_passthrough(baudrate)
-    flash_esp32(firmware, radioport, baudrate)
+    radioport = internalTx.open_passthrough(baudrate)
+    internalTx.flash_esp32(firmware, radioport, baudrate)
 
 
 def flashInternalElrsTxModuleWirelessBridge(programmer, firmware):
     #print(programmer)
     baudrate = 115200
-    radioport = open_passthrough(baudrate, wirelessbridge = True)
-    flash_esp8266_wirelessbridge(firmware, radioport, baudrate)
+    radioport = internalTx.open_passthrough(baudrate, wirelessbridge = True)
+    internalTx.flash_esp8266_wirelessbridge(firmware, radioport, baudrate)
 
 
 '''
@@ -520,7 +530,7 @@ def getFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
                 resList.remove(key)
             elif version not in key['path']: # ensure we only have the desired firmware version
                 resList.remove(key)
-            elif 'tx-'+device not in key['path']: # only accept tx-device-internal
+            elif device not in key['path']: # only accept tx-device-internal
                 resList.remove(key)
     else: # 'tx' or 'rx'
         if device == '' or version == '': print('ERROR: getFilesListFromTree() [2]')
@@ -541,7 +551,7 @@ def getFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
                 resList.remove(key)
             elif version not in key['path']: # ensure we only have the desired firmware version
                 resList.remove(key)
-            elif txorrxortxintorlua+'-'+device not in key['path']: # only accept tx-device-xxx or rx-device-xxx
+            elif device not in key['path']: # only accept tx-device-xxx or rx-device-xxx
                 resList.remove(key)
 
     ''' import pprint
@@ -565,7 +575,7 @@ def getFileAndWriteToDisk(url, filename):
 
 
 # API for app
-def flashDevice(programmer, device, url, filename, comport=None):
+def flashDevice(programmer, url, filename, comport=None, baudrate=None):
     #print('flashDevice()')
     #print(device)
     #print(url)
@@ -580,8 +590,11 @@ def flashDevice(programmer, device, url, filename, comport=None):
     #print(filepath)
     if 'wirelessbridge' in programmer:
         if 'internal' in programmer:
-            if 'esp8285' in programmer:
+            if ('esp8266' in programmer or 'esp8285' in programmer):
                 flashInternalElrsTxModuleWirelessBridge(programmer, filepath)
+        else:
+            if ('esp8266' in programmer or 'esp8285' in programmer):
+                flashEspToolProgrammer(programmer, filepath, comport, baudrate)
     elif 'stm32' in programmer:
         flashSTM32CubeProgrammer(programmer, filepath)
     elif 'esp32' in programmer:
@@ -629,7 +642,19 @@ class CTkCompPortOptionMenu(ctk.CTkOptionMenu):
     def _open_dropdown_menu(self):
         self.update()
         super()._open_dropdown_menu()
-        
+
+
+class CTkInfoTextbox(ctk.CTkTextbox):
+    def __init__(self, master, **kwargs):
+        super().__init__(master=master, **kwargs)
+        super().configure(state="disabled")
+
+    def setText(self, txt):
+        super().configure(state="normal")
+        super().delete("0.0", "end")
+        super().insert("0.0", txt)
+        super().configure(state="disabled")
+
 
 class App(ctk.CTk):
 
@@ -809,14 +834,39 @@ class App(ctk.CTk):
                         flashmethod = 'dfu'
                     else:
                         flashmethod = 'stlink'
-                    flashDevice(chipset + ' ' + flashmethod, device_type, key['url'], firmware_filename)
+                    flashDevice(chipset + ' ' + flashmethod, key['url'], firmware_filename)
                     return
                 elif 'esp32' in chipset:
                     comport = self.fTxModuleExternal_ComPort_menu.get()
                     print('--->',comport)
-                    flashDevice(chipset, device_type, key['url'], firmware_filename, comport=comport)
+                    flashDevice(chipset, key['url'], firmware_filename, comport=comport)
                     return
         print('ERROR: flashTxModuleExternalFirmware() [2]')
+        
+    def flashTxModuleExternalWirelessBridgeFirmware(self):
+        #print('flashTxModuleExternalWirelessBridgeFirmware()')
+        comport = self.fTxModuleExternal_ComPort_menu.get()
+        #print('--->',comport)
+        device_type = self.fTxModuleExternal_DeviceType_menu.get()
+        device_type_f = self.txDeviceTypeDict[device_type]['fname']
+        firmware_filename = self.fTxModuleExternal_FirmwareFile_menu.get()
+        _, _, wireless = self.get_metadata(device_type_f, firmware_filename)
+        #print('--->',wireless)
+        programmer = 'wirelessbridge'
+        baudrate = 921600
+        if 'chipset' in wireless:
+            programmer = programmer + ' ' + wireless['chipset']
+        else:
+            programmer = programmer + ' esp8266'
+        if 'reset' in wireless:
+            programmer = programmer + ' ' + wireless['reset']
+        else:
+            programmer = programmer + ' dtr'
+        if 'baud' in wireless:
+            baudrate = wireless['baud']
+        url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
+        firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
+        flashDevice(programmer, url, firmware_filename, comport, baudrate)
 
     # calls flashDevice() for the selected device, firmware url, and filename, to initiate flashing
     def flashReceiverFirmware(self):
@@ -830,9 +880,9 @@ class App(ctk.CTk):
         for key in self.rxFirmwareFilesList:
             if firmware_filename in key['path']: # that's our firmware entry
                 if 'MatekSys' in device_type: # TODO: this should be defined in a global structure !!
-                    flashDevice('stm32 dfu', device_type, key['url'], firmware_filename)
+                    flashDevice('stm32 dfu', key['url'], firmware_filename)
                 else:
-                    flashDevice('stm32 stlink', device_type, key['url'], firmware_filename)
+                    flashDevice('stm32 stlink', key['url'], firmware_filename)
                 return
         print('ERROR: flashReceiverFirmware() [2]')
 
@@ -844,14 +894,14 @@ class App(ctk.CTk):
             return
         for key in self.txIntFirmwareFilesList:
             if firmware_filename in key['path']: # that's our firmware entry
-                flashDevice('esp32 internal', device_type, key['url'], firmware_filename)
+                flashDevice('esp32 internal', key['url'], firmware_filename)
                 return
         print('ERROR: flashTxModuleInternalFirmware() [2]')
 
     def flashTxModuleInternalWirelessBridgeFirmware(self):
         url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
         firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
-        flashDevice('wirelessbridge internal esp8285', '', url, firmware_filename)
+        flashDevice('wirelessbridge internal esp8285', url, firmware_filename)
 
 
     # calls getFileAndWriteToDisk() for the selected filename, and saves it
@@ -911,9 +961,9 @@ class App(ctk.CTk):
         self.updateDeviceTypes()
         self.updateFirmwareVersions()
 
-        self.updateTxModuleExternalFirmwareFiles()
+        self.fTxModuleExternal_Startup()
         self.updateReceiverFirmwareFiles()
-        self.updateTxModuleInternalFirmwareFiles()
+        self.fTxModuleInternal_Startup()
         self.updateLuaScriptFiles()
 
     def ini_open(self):
@@ -937,6 +987,42 @@ class App(ctk.CTk):
             F.close()
         except:
             pass
+
+
+    #--------------------------------------------------
+    #-- Miscellaneous
+    #--------------------------------------------------
+
+    def get_metadata(self, device_type_f, firmware_filename):
+        flashmethod = None
+        description = None
+        wireless = None
+        if device_type_f in mlrs_md.g_targetDict.keys():
+            device_type_dict = mlrs_md.g_targetDict[device_type_f]
+            if 'flashmethod' in device_type_dict.keys():
+                flashmethod = device_type_dict['flashmethod']
+            if 'description' in device_type_dict.keys():
+                description = device_type_dict['description']
+            #print(device_type_dict)
+            #print(firmware_filename)
+            if 'failed' not in firmware_filename:
+                for key in device_type_dict.keys(): # search for target entry
+                    if key in firmware_filename:
+                        target_dict = device_type_dict[key]
+                        #print("found", target_dict)
+                        if 'flashmethod' in target_dict.keys():
+                            flashmethod = target_dict['flashmethod']
+                        if 'description' in target_dict.keys():
+                            if description == None:
+                                description = target_dict['description']
+                            else:
+                                description = description + '\n' + target_dict['description']
+                        if 'wireless' in target_dict.keys():
+                            wireless = target_dict['wireless']
+                            #if 'description' in target_dict['wireless'].keys():
+                            #    description = target_dict['wireless']['description']
+                    break
+        return flashmethod, description, wireless
 
 
     #--------------------------------------------------
@@ -1088,6 +1174,7 @@ class App(ctk.CTk):
         self.fTxModuleExternal = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.fTxModuleExternal.grid_columnconfigure(0, weight=0)
         self.fTxModuleExternal.grid_columnconfigure(1, weight=1)
+        self.fTxModuleExternal.grid_rowconfigure(5, weight=1)
 
         wrow = 0
 
@@ -1101,7 +1188,7 @@ class App(ctk.CTk):
             width=300, # this sets a min width, can grow larger
             #dynamic_resizing = False, # when false it prevents the box to grow with the entry
             command=self.fTxModuleExternal_DeviceType_menu_event)
-        self.fTxModuleExternal_DeviceType_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fTxModuleExternal_DeviceType_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Firmware Version
@@ -1113,7 +1200,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fTxModuleExternal_FirmwareVersion_menu_event)
-        self.fTxModuleExternal_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fTxModuleExternal_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Firmware File
@@ -1125,7 +1212,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fTxModuleExternal_FirmwareFile_menu_event)
-        self.fTxModuleExternal_FirmwareFile_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fTxModuleExternal_FirmwareFile_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Flash Button
@@ -1137,7 +1224,7 @@ class App(ctk.CTk):
             text = "Flash Tx Module",
             command = self.fTxModuleExternal_Flash_button_event)
         self.fTxModuleExternal_Flash_button.grid(row=0, column=0)
-        
+
         self.fTxModuleExternal_ComPort_menu = CTkCompPortOptionMenu(self.fTxModuleExternal_fFlash,
             porttype = 'eps32',
             values=['COM1'],
@@ -1145,25 +1232,34 @@ class App(ctk.CTk):
             command=self.fTxModuleExternal_ComPort_menu_event)
         self.fTxModuleExternal_ComPort_menu.grid(row=0, column=1, padx=20)
         self.fTxModuleExternal_ComPort_menu.grid_remove() # grid_remove() memorizes settings, grid_forget() looses them
-        
-        #-- Wireless Bridge --
 
-        self.fTxModuleExternal_WirelessBridge_label = ctk.CTkLabel(self.fTxModuleExternal,
+        #-- Wireless Bridge --
+        self.fTxModuleExternal_fWirelessBridge = ctk.CTkFrame(self.fTxModuleExternal, corner_radius=0, fg_color="transparent")
+        self.fTxModuleExternal_fWirelessBridge.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="we")
+        self.fTxModuleExternal_fWirelessBridge.grid_columnconfigure(0, weight=1)
+        wrow += 1
+
+        self.fTxModuleExternal_WirelessBridge_label = ctk.CTkLabel(self.fTxModuleExternal_fWirelessBridge,
             text="Wireless Bridge",
             font=ctk.CTkFont(weight="bold")
             )
-        self.fTxModuleExternal_WirelessBridge_label.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="w")
-        wrow += 1
+        self.fTxModuleExternal_WirelessBridge_label.grid(row=0, column=0, sticky="w")
 
-        # Wireless Bridge Flash Button
-        self.fTxModuleExternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleExternal,
+        self.fTxModuleExternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleExternal_fWirelessBridge,
             text = "Flash Wireless Bridge",
             command = self.fTxModuleExternal_WirelessBridgeFlash_button_event)
-        self.fTxModuleExternal_WirelessBridgeFlash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
-        wrow += 1
+        self.fTxModuleExternal_WirelessBridgeFlash_button.grid(row=1, column=0, pady=(20,0))
 
-        self.fTxModuleExternal_WirelessBridge_label.grid_remove() # pack_forget() did not work!
-        self.fTxModuleExternal_WirelessBridgeFlash_button.grid_remove()
+        #-- Description text box --
+        self.fTxModuleExternal_Description_textbox = CTkInfoTextbox(self.fTxModuleExternal,
+            #height=100,
+            font=("Courier New",12),
+            )
+        self.fTxModuleExternal_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
+        wrow += 1
+        
+        self.fTxModuleExternal_fWirelessBridge.grid_remove() # pack_forget() did not work!
+        self.fTxModuleExternal_Description_textbox.grid_remove()
 
     def fTxModuleExternal_ComPort_HandleIt(self):
         device_type = self.fTxModuleExternal_DeviceType_menu.get()
@@ -1174,24 +1270,46 @@ class App(ctk.CTk):
             self.fTxModuleExternal_ComPort_menu.update()
             self.fTxModuleExternal_ComPort_menu.grid()
 
+    def fTxModuleExternal_UpdateWidgets(self):
+        device_type = self.fTxModuleExternal_DeviceType_menu.get()
+        device_type_f = self.txDeviceTypeDict[device_type]['fname']
+        firmware_filename = self.fTxModuleExternal_FirmwareFile_menu.get()
+        flashmethod, description, wireless = self.get_metadata(device_type_f, firmware_filename)
+        if wireless != None:
+            self.fTxModuleExternal_fWirelessBridge.grid()
+        else:
+            self.fTxModuleExternal_fWirelessBridge.grid_remove()
+        if description != None:
+            self.fTxModuleExternal_Description_textbox.grid()
+            self.fTxModuleExternal_Description_textbox.setText(description)
+        else:
+            self.fTxModuleExternal_Description_textbox.grid_remove()
+
+    def fTxModuleExternal_Startup(self):
+        self.updateTxModuleExternalFirmwareFiles()
+        self.fTxModuleExternal_ComPort_HandleIt()
+        self.fTxModuleExternal_UpdateWidgets()
+
     def fTxModuleExternal_DeviceType_menu_event(self, opt):
         self.updateTxModuleExternalFirmwareFiles()
         self.fTxModuleExternal_ComPort_HandleIt()
+        self.fTxModuleExternal_UpdateWidgets()
 
     def fTxModuleExternal_FirmwareVersion_menu_event(self, opt):
         self.updateTxModuleExternalFirmwareFiles()
+        self.fTxModuleExternal_UpdateWidgets()
 
     def fTxModuleExternal_FirmwareFile_menu_event(self, opt):
-        pass
+        self.fTxModuleExternal_UpdateWidgets()
 
     def fTxModuleExternal_Flash_button_event(self):
         self.flashTxModuleExternalFirmware()
 
-    def fTxModuleExternal_WirelessBridgeFlash_button_event(self):
-        pass
-
     def fTxModuleExternal_ComPort_menu_event(self, opt):
         pass
+
+    def fTxModuleExternal_WirelessBridgeFlash_button_event(self):
+        self.flashTxModuleExternalWirelessBridgeFirmware()
 
 
     #--------------------------------------------------
@@ -1214,7 +1332,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fReceiver_DeviceType_menu_event)
-        self.fReceiver_DeviceType_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fReceiver_DeviceType_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Firmware Version
@@ -1226,7 +1344,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fReceiver_FirmwareVersion_menu_event)
-        self.fReceiver_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fReceiver_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Firmware File
@@ -1238,7 +1356,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fReceiver_FirmwareFile_menu_event)
-        self.fReceiver_FirmwareFile_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fReceiver_FirmwareFile_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Flash Button
@@ -1267,6 +1385,7 @@ class App(ctk.CTk):
     def initTxModuleInternalFrame(self):
         self.fTxModuleInternal = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.fTxModuleInternal.grid_columnconfigure(1, weight=1)
+        self.fTxModuleInternal.grid_rowconfigure(5, weight=1)
 
         wrow = 0
 
@@ -1279,7 +1398,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fTxModuleInternal_DeviceType_menu_event)
-        self.fTxModuleInternal_DeviceType_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fTxModuleInternal_DeviceType_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Firmware Version
@@ -1291,7 +1410,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fTxModuleInternal_FirmwareVersion_menu_event)
-        self.fTxModuleInternal_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fTxModuleInternal_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Firmware File
@@ -1303,7 +1422,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fTxModuleInternal_FirmwareFile_menu_event)
-        self.fTxModuleInternal_FirmwareFile_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fTxModuleInternal_FirmwareFile_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Flash Button
@@ -1314,29 +1433,57 @@ class App(ctk.CTk):
         wrow += 1
 
         #-- Wireless Bridge --
+        self.fTxModuleInternal_fWirelessBridge = ctk.CTkFrame(self.fTxModuleInternal, corner_radius=0, fg_color="transparent")
+        self.fTxModuleInternal_fWirelessBridge.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="we")
+        self.fTxModuleInternal_fWirelessBridge.grid_columnconfigure(0, weight=1)
+        wrow += 1
 
-        self.fTxModuleInternal_WirelessBridge_label = ctk.CTkLabel(self.fTxModuleInternal,
+        self.fTxModuleInternal_WirelessBridge_label = ctk.CTkLabel(self.fTxModuleInternal_fWirelessBridge,
             text="Wireless Bridge",
             font=ctk.CTkFont(weight="bold")
             )
-        self.fTxModuleInternal_WirelessBridge_label.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="w")
-        wrow += 1
+        self.fTxModuleInternal_WirelessBridge_label.grid(row=0, column=0, sticky="w")
 
-        # Wireless Bridge Flash Button
-        self.fTxModuleInternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleInternal,
+        self.fTxModuleInternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleInternal_fWirelessBridge,
             text = "Flash Wireless Bridge",
             command = self.fTxModuleInternal_WirelessBridgeFlash_button_event)
-        self.fTxModuleInternal_WirelessBridgeFlash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
+        self.fTxModuleInternal_WirelessBridgeFlash_button.grid(row=1, column=0, pady=(20,0))
+
+        #-- Description text box --
+        self.fTxModuleInternal_Description_textbox = CTkInfoTextbox(self.fTxModuleInternal,
+            font=("Courier New",12),
+            )
+        self.fTxModuleInternal_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
         wrow += 1
+        
+        #self.fTxModuleInternal_fWirelessBridge.grid_remove() # pack_forget() did not work!
+        self.fTxModuleInternal_Description_textbox.grid_remove()
+
+    def fTxModuleInternal_UpdateWidgets(self):
+        device_type = self.fTxModuleInternal_DeviceType_menu.get()
+        device_type_f = self.txIntDeviceTypeDict[device_type]['fname']
+        firmware_filename = self.fTxModuleInternal_FirmwareFile_menu.get()
+        _, description, _ = self.get_metadata(device_type_f, firmware_filename)
+        if description != None:
+            self.fTxModuleInternal_Description_textbox.grid()
+            self.fTxModuleInternal_Description_textbox.setText(description)
+        else:
+            self.fTxModuleInternal_Description_textbox.grid_remove()
+
+    def fTxModuleInternal_Startup(self):
+        self.updateTxModuleInternalFirmwareFiles()
+        self.fTxModuleInternal_UpdateWidgets()
 
     def fTxModuleInternal_DeviceType_menu_event(self, opt):
         self.updateTxModuleInternalFirmwareFiles()
+        self.fTxModuleInternal_UpdateWidgets()
 
     def fTxModuleInternal_FirmwareVersion_menu_event(self, opt):
         self.updateTxModuleInternalFirmwareFiles()
+        self.fTxModuleInternal_UpdateWidgets()
 
     def fTxModuleInternal_FirmwareFile_menu_event(self, opt):
-        pass
+        self.fTxModuleInternal_UpdateWidgets()
 
     def fTxModuleInternal_Flash_button_event(self):
         self.flashTxModuleInternalFirmware()
@@ -1364,7 +1511,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fLuaScript_FirmwareVersion_menu_event)
-        self.fLuaScript_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fLuaScript_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Radio Screen
@@ -1376,7 +1523,7 @@ class App(ctk.CTk):
             values=["downloading..."],
             width=300,
             command=self.fLuaScript_RadioScreen_menu_event)
-        self.fLuaScript_RadioScreen_menu.grid(row=wrow, column=1, padx=(1,20), sticky="w")
+        self.fLuaScript_RadioScreen_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
         # Download Color Script Button

@@ -16,31 +16,30 @@
 # chipset: we assume currently that a device type/brand does not use mixed chips
 
 g_txModuleExternalDeviceTypeDict = {
-    'MatekSys' :       { 'fname' : 'matek',       'chipset' : 'stm32' },
-    'FrSky R9' :       { 'fname' : 'R9',          'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'FRM303',      'chipset' : 'stm32' },
-    'Wio E5' :         { 'fname' : 'Wio-E5',      'chipset' : 'stm32' },
-    'E77 MBL Kit' :    { 'fname' : 'E77-MBLKit',  'chipset' : 'stm32' },
-    'Easysolder' :     { 'fname' : 'easysolder',  'chipset' : 'stm32' },
-    'RadioMaster' :    { 'fname' : 'radiomaster', 'chipset' : 'esp32' },
-    'BetaFPV' :        { 'fname' : 'betafpv',     'chipset' : 'esp32' },
+    'MatekSys' :       { 'fname' : 'tx-matek',       'chipset' : 'stm32' },
+    'FrSky R9' :       { 'fname' : 'tx-R9',          'chipset' : 'stm32' },
+    'FlySky FRM 303' : { 'fname' : 'tx-FRM303',      'chipset' : 'stm32' },
+    'Wio E5' :         { 'fname' : 'tx-Wio-E5',      'chipset' : 'stm32' },
+    'E77 MBL Kit' :    { 'fname' : 'tx-E77-MBLKit',  'chipset' : 'stm32' },
+    'Easysolder' :     { 'fname' : 'tx-easysolder',  'chipset' : 'stm32' },
+    'RadioMaster' :    { 'fname' : 'tx-radiomaster', 'chipset' : 'esp32' },
+    'BetaFPV' :        { 'fname' : 'tx-betafpv',     'chipset' : 'esp32' },
 }
 
 
 g_receiverDeviceTypeDict = {
-    'MatekSys' :       { 'fname' : 'matek',       'chipset' : 'stm32' },
-    'FrSky R9' :       { 'fname' : 'R9',          'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'FRM303',      'chipset' : 'stm32' },
-    'Wio E5' :         { 'fname' : 'Wio-E5',      'chipset' : 'stm32' },
-    'E77 MBL Kit' :    { 'fname' : 'E77-MBLKit',  'chipset' : 'stm32' },
-    'Easysolder' :     { 'fname' : 'easysolder',  'chipset' : 'stm32' },
+    'MatekSys' :       { 'fname' : 'rx-matek',       'chipset' : 'stm32' },
+    'FrSky R9' :       { 'fname' : 'rx-R9',          'chipset' : 'stm32' },
+    'FlySky FRM 303' : { 'fname' : 'rx-FRM303',      'chipset' : 'stm32' },
+    'Wio E5' :         { 'fname' : 'rx-Wio-E5',      'chipset' : 'stm32' },
+    'E77 MBL Kit' :    { 'fname' : 'rx-E77-MBLKit',  'chipset' : 'stm32' },
+    'Easysolder' :     { 'fname' : 'rx-easysolder',  'chipset' : 'stm32' },
 }
 
 
 g_txModuleInternalDeviceTypeDict = {
-    'Jumper T20, T20 V2, T15, T14, T-Pro S' :        { 'fname' : 'jumper-internal',            'chipset' : 'esp32' },
-    'RadioMaster TX16S, TX12, MT12, Zorro, Pocket' : { 'fname' : 'radiomaster-internal-2400',  'chipset' : 'esp32' },
-    'RadioMaster Boxer' :                            { 'fname' : 'radiomaster-internal-boxer', 'chipset' : 'esp32' },
+    'Jumper Radio' :      { 'fname' : 'tx-jumper-internal',      'chipset' : 'esp32' },
+    'RadioMaster Radio' : { 'fname' : 'tx-radiomaster-internal', 'chipset' : 'esp32' },
 }
 
 
@@ -48,69 +47,108 @@ g_txModuleInternalDeviceTypeDict = {
 -- Target/firmware specific
 --------------------------------------------------'''
 # things which are target and/or firmware specific
+# the upper level descriptor must be unique
 
-g_targetsDict = {
-    #-- tx modules
+g_targetDict = {
+    #-- Tx Modules
     # stm32 defaults:
     # - 'flashmethod' : 'stlink'
-    'tx-matek-' : {
+    'tx-matek' : {
         'flashmethod' : 'dfu',
-        'description' : 'flash method is DFU',
+        'description' : 
+            'Flash method: DFU, connect to USB\n' +
+            'Wireless bridge: HC04, cannot be flashed\n',
     },
-    'tx-E77-MBLKit-' : {},
-    'tx-easysolder-' : {},
-    'tx-FRM303-' : {},
+    'tx-E77-MBLKit' : {},
+    'tx-easysolder' : {},
+    'tx-FRM303' : {},
     'tx-R9' : {},
-    'tx-Wio-E5-' : {},
+    'tx-Wio-E5' : {},
 
     # esp32 tx module defaults
     # - 'flashmethod' : esptool with 'esp32' 
-    'tx-betafpv-' : {
+    'tx-betafpv' : {
         'tx-betafpv-micro-1w-2400' : {
-            'description' : 'For flashing the dip switches need to be set as follow:\n- blabla\n- blabla',
+            'description' : 
+                'Flash method: connect to USB (select COM port)\n' +
+                'Wireless bridge: ESP8285\n' +
+                'Dip switches need to be set as follow:\n' +
+                '  1,2 on:    update firmware on main ESP32, USB is connected to UARTO\n' +
+                '  3,4 on:    normal operation mode, USB is not used, UARTO connected to ESP8285\n' +
+                '  5,6,7 on:  update firmware on ESP8285, USB is connected to ESP8285 UART\n',
             'wireless' : {
-                'description' : 'Notes for flashing the wireless-bridge:',
+                'chipset' : 'esp8266', 
+                'reset' : 'dtr', 
+                'baud' : 921600,
             },
         },
     },
-    'tx-radiomaster-' : {
-        'tx-radiomaster-bandit-' : {
-            'wireless' : {},
+    'tx-radiomaster' : {
+        'tx-radiomaster-bandit' : {
+            'description' : 
+                'Flash method: connect to USB (select COM port)\n' +
+                'Wireless bridge: ESP8285\n' +
+                'For flashing the wireless bridge: \n' +
+                '  - set SerDest to serial2\n' +
+                '  - set SerBaudrate to 115200\n' +
+                '  - put Tx module into FLASH_ESP mode via OLED Actions page\n',
+            'wireless' : {
+                'chipset' : 'esp8266',
+                'reset' : 'no dtr', 
+                'baud' : 115200,
+            },
         },
-        'tx-radiomaster-rp4td-' : {},
+        'tx-radiomaster-rp4td' : {},
     },
 
     # esp32 internal tx module defaults
     # - 'flashmethod' : ...
-    # - wireless-bridge: these currently all use a esp8285 backpack, and use the same wirelesss-bridge flash method
-    'tx-jumper-internal-' : {},
-    'tx-radiomaster-internal-' : {
-        'tx-radiomaster-internal-2400-' : {},
-        'tx-radiomaster-internal-boxer-' : {},
+    # - wireless-bridge: they all currently use a esp8285 backpack, and use the same wirelesss-bridge flash method
+    'tx-jumper-internal' : {
+        'description' : 
+            "Supported radios: T20 V2, T15, T14, T-Pro S\n" +
+            "Flash method: radio passthrough\n" + 
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+            "Wireless bridge: ESP8285\n" +
+            "For flashing the wireless bridge:\n" +
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
+    },
+    'tx-radiomaster-internal' : {
+        'description' : 
+            "Supported radios: TX16S, TX12, MT12, Zorro, Pocket, Boxer\n" +
+            "Flash method: radio passthrough\n" + 
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+            "Wireless bridge: ESP8285\n" +
+            "For flashing the wireless bridge:\n" +
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
+        'tx-radiomaster-internal-2400' : {
+        },
+        'tx-radiomaster-internal-boxer' : {
+        },
     },
 
-    #-- receivers
+    #-- Receivers
     # stm32 defaults:
     # - 'flashmethod' : 'stlink'
-    'rx-matek-' : {
+    'rx-matek' : {
         'flashmethod' : 'dfu',
-        'rx-matek-mr900-22-' : {
+        'rx-matek-mr900-22' : {
             'flashmethod' : 'stlink'
         },
     },
-    'rx-E77-MBLKit-' : {},
-    'rx-easysolder-' : {},
-    'rx-FRM303-' : {},
+    'rx-E77-MBLKit' : {},
+    'rx-easysolder' : {},
+    'rx-FRM303' : {},
     'rx-R9' : {},
-    'rx-Wio-E5-' : {},
+    'rx-Wio-E5' : {},
     
     # esp defaults:
     # - 'flashmethod' : ??
-    'rx-bayck-' : {},
-    'rx-betafpv-' : {},
-    'rx-generic-' : {},
-    'rx-generic-c3-lr1121-' : {},
-    'rx-radiomaster-' : {},
-    'rx-speedybee-' : {},
+    'rx-bayck' : {},
+    'rx-betafpv' : {},
+    'rx-generic' : {},
+    'rx-generic-c3-lr1121' : {},
+    'rx-radiomaster' : {},
+    'rx-speedybee' : {},
 }
 
