@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #*******************************************************
 # mLRS Flasher Desktop App
-# 13. Feb. 2025 001
+# 14. Feb. 2025 001
 #********************************************************
 app_version = '13.02.2025-001'
 
@@ -49,6 +49,18 @@ def os_system(arg):
         os.system("pause")
         exit(1)
 
+def find_serial_ports():
+    try:
+        from serial.tools.list_ports import comports
+        portList = list(comports())
+    except:
+        print('ERROR: find_serial_ports() [1]')
+        return None
+    deviceportList = []
+    for port in portList:
+        deviceportList.append(port.device)
+    return deviceportList
+
 
 '''
 --------------------------------------------------
@@ -83,6 +95,33 @@ def flashSTM32CubeProgrammer(programmer, firmware):
 ESP32 Flashing Tools
 --------------------------------------------------
 '''
+
+# RadioMaster Bandit, BetaFPV1WMicro seem to use a CP210x usb-ttl adapter
+def find_esp_device_serial_ports():
+    try:
+        from serial.tools.list_ports import comports
+        portList = list(comports())
+    except:
+        print('ERROR: find_esp_device_serial_ports() [1]')
+        return None
+    deviceportList = []
+    for port in portList:
+        if not 'USB' in port.hwid:
+            continue
+        if port.vid == 0x0483 and port.pid == 0x374E: # this is STLink
+            continue
+        if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx
+            continue
+        if port.vid == 0x1209 and port.pid == 0x5740: # this is ArduPilot
+            continue
+        if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
+            continue
+        deviceportList.append(port.device)
+        #print('*',port.device, port.name, port.description)
+        #print(' ',port.hwid, port.vid, port.pid)
+        #print(' ',port.manufacturer, port.location, port.product, port.interface)
+    return deviceportList
+
 
 def flash_esptool(programmer, firmware, comport, baudrate):
     assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
@@ -132,33 +171,6 @@ def flash_esptool(programmer, firmware, comport, baudrate):
 
     # TODO: can we catch if this was succesful?
     os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + args)
-
-
-# RadioMaster Bandit, BetaFPV1WMicro seem to use a CP210x usb-ttl adapter
-def find_esp_device_serial_ports():
-    try:
-        from serial.tools.list_ports import comports
-        portList = list(comports())
-    except:
-        print('ERROR: find_esp_device_serial_ports() [1]')
-        return None
-    deviceportList = []
-    for port in portList:
-        if not 'USB' in port.hwid:
-            continue
-        if port.vid == 0x0483 and port.pid == 0x374E: # this is STLink
-            continue
-        if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx
-            continue
-        if port.vid == 0x1209 and port.pid == 0x5740: # this is ArduPilot
-            continue
-        if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
-            continue
-        deviceportList.append(port.device)
-        #print('*',port.device, port.name, port.description)
-        #print(' ',port.hwid, port.vid, port.pid)
-        #print(' ',port.manufacturer, port.location, port.product, port.interface)
-    return deviceportList
 
 
 def flashEspToolProgrammer(programmer, firmware, comport, baudrate=921600):
@@ -629,7 +641,10 @@ class CTkCompPortOptionMenu(ctk.CTkOptionMenu):
 
     def update(self):
         sel = self.get()
-        portlist = find_esp_device_serial_ports()
+        if self.porttype == 'esp32':
+            portlist = find_esp_device_serial_ports()
+        else:
+            portlist = find_serial_ports()
         if not portlist:
             portlist = ['COM1']
         #print(portlist)
@@ -642,6 +657,12 @@ class CTkCompPortOptionMenu(ctk.CTkOptionMenu):
     def _open_dropdown_menu(self):
         self.update()
         super()._open_dropdown_menu()
+
+
+class CTkFlashButton(ctk.CTkButton):
+    def __init__(self, master, **kwargs):
+        super().__init__(master=master, **kwargs)
+        super().configure(fg_color="green", hover_color="#006400")
 
 
 class CTkInfoTextbox(ctk.CTkTextbox):
@@ -1220,14 +1241,14 @@ class App(ctk.CTk):
         self.fTxModuleExternal_fFlash.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 
-        self.fTxModuleExternal_Flash_button = ctk.CTkButton(self.fTxModuleExternal_fFlash,
+        self.fTxModuleExternal_Flash_button = CTkFlashButton(self.fTxModuleExternal_fFlash,
             text = "Flash Tx Module",
-            command = self.fTxModuleExternal_Flash_button_event,
-            fg_color="green", hover_color="#006400")
+            #fg_color="green", hover_color="#006400",
+            command = self.fTxModuleExternal_Flash_button_event)
         self.fTxModuleExternal_Flash_button.grid(row=0, column=0)
 
         self.fTxModuleExternal_ComPort_menu = CTkCompPortOptionMenu(self.fTxModuleExternal_fFlash,
-            porttype = 'eps32',
+            porttype = 'esp32',
             values=['COM1'],
             width=10,
             command=self.fTxModuleExternal_ComPort_menu_event)
@@ -1246,10 +1267,9 @@ class App(ctk.CTk):
             )
         self.fTxModuleExternal_WirelessBridge_label.grid(row=0, column=0, sticky="w")
 
-        self.fTxModuleExternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleExternal_fWirelessBridge,
+        self.fTxModuleExternal_WirelessBridgeFlash_button = CTkFlashButton(self.fTxModuleExternal_fWirelessBridge,
             text = "Flash Wireless Bridge",
-            command = self.fTxModuleExternal_WirelessBridgeFlash_button_event,
-            fg_color="green", hover_color="#006400")
+            command = self.fTxModuleExternal_WirelessBridgeFlash_button_event)
         self.fTxModuleExternal_WirelessBridgeFlash_button.grid(row=1, column=0, pady=(20,0))
 
         #-- Description text box --
@@ -1362,10 +1382,9 @@ class App(ctk.CTk):
         wrow += 1
 
         # Flash Button
-        self.fReceiver_Flash_button = ctk.CTkButton(self.fReceiver,
+        self.fReceiver_Flash_button = CTkFlashButton(self.fReceiver,
             text = "Flash Receiver",
-            command = self.fReceiver_Flash_button_event,
-            fg_color="green", hover_color="#006400")
+            command = self.fReceiver_Flash_button_event)
         self.fReceiver_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
 
     def fReceiver_DeviceType_menu_event(self, opt):
@@ -1429,10 +1448,9 @@ class App(ctk.CTk):
         wrow += 1
 
         # Flash Button
-        self.fTxModuleInternal_Flash_button = ctk.CTkButton(self.fTxModuleInternal,
+        self.fTxModuleInternal_Flash_button = CTkFlashButton(self.fTxModuleInternal,
             text = "Flash Tx Module",
-            command = self.fTxModuleInternal_Flash_button_event,
-            fg_color="green", hover_color="#006400")
+            command = self.fTxModuleInternal_Flash_button_event)
         self.fTxModuleInternal_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 
@@ -1448,10 +1466,9 @@ class App(ctk.CTk):
             )
         self.fTxModuleInternal_WirelessBridge_label.grid(row=0, column=0, sticky="w")
 
-        self.fTxModuleInternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleInternal_fWirelessBridge,
+        self.fTxModuleInternal_WirelessBridgeFlash_button = CTkFlashButton(self.fTxModuleInternal_fWirelessBridge,
             text = "Flash Wireless Bridge",
-            command = self.fTxModuleInternal_WirelessBridgeFlash_button_event,
-            fg_color="green", hover_color="#006400")
+            command = self.fTxModuleInternal_WirelessBridgeFlash_button_event)
         self.fTxModuleInternal_WirelessBridgeFlash_button.grid(row=1, column=0, pady=(20,0))
 
         #-- Description text box --
@@ -1531,11 +1548,10 @@ class App(ctk.CTk):
         self.fLuaScript_RadioScreen_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
 
-        # Download Color Script Button
-        self.fLuaScript_Download_button = ctk.CTkButton(self.fLuaScript,
+        # Download Lua Script Button
+        self.fLuaScript_Download_button = CTkFlashButton(self.fLuaScript,
             text = "Download Lua Script",
-            command = self.fLuaScript_Download_button_event,
-            fg_color="green", hover_color="#006400")
+            command = self.fLuaScript_Download_button_event)
         self.fLuaScript_Download_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 

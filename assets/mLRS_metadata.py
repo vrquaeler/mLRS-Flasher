@@ -50,14 +50,16 @@ g_txModuleInternalDeviceTypeDict = {
 # the upper level descriptor must be unique
 
 g_targetDict = {
+    #--------------------
     #-- Tx Modules
+    #--------------------
     # stm32 defaults:
     # - 'flashmethod' : 'stlink'
     'tx-matek' : {
         'flashmethod' : 'dfu',
-        'description' : 
-            'Flash method: DFU, connect to USB\n\n' +
-            'Wireless bridge: HC04, cannot be flashed\n',
+        'description' :
+            "Flash method: DFU, connect to USB\n" +
+            "\nWireless bridge: HC04, cannot be flashed\n",
     },
     'tx-E77-MBLKit' : {},
     'tx-easysolder' : {},
@@ -66,59 +68,62 @@ g_targetDict = {
     'tx-Wio-E5' : {},
 
     # esp32 tx module defaults
-    # - 'flashmethod' : esptool with 'esp32' 
+    # - 'flashmethod' : esptool with 'esp32'
     'tx-betafpv' : {
         'tx-betafpv-micro-1w-2400' : {
-            'description' : 
-                'Flash method: connect to USB (select COM port)\n\n' +
-                'Wireless bridge: ESP8285\n' +
-                'Dip switches need to be set as follow:\n' +
-                '  1,2 on:    update firmware on main ESP32, USB connected to UARTO\n' +
-                '  3,4 on:    normal operation mode, USB not used, UARTO connected to ESP8285\n' +
-                '  5,6,7 on:  update firmware on ESP8285, USB connected to ESP8285 UART\n',
+            'description' :
+                "Flash method: connect to USB (select COM port)\n" +
+                "\nWireless bridge: ESP8285\n" +
+                "Dip switches need to be set as follow:\n" +
+                "  1,2 on:    update firmware on main ESP32, USB connected to UARTO\n" +
+                "  3,4 on:    normal operation mode, USB not used, UARTO connected to ESP8285\n" +
+                "  5,6,7 on:  update firmware on ESP8285, USB connected to ESP8285 UART\n",
             'wireless' : {
-                'chipset' : 'esp8266', 
-                'reset' : 'dtr', 
+                'chipset' : 'esp8266',
+                'reset' : 'dtr',
                 'baud' : 921600,
             },
         },
     },
     'tx-radiomaster' : {
         'tx-radiomaster-bandit' : {
-            'description' : 
-                'Flash method: connect to USB (select COM port)\n\n' +
-                'Wireless bridge: ESP8285\n' +
-                'For flashing the wireless bridge: \n' +
-                '  - set Tx SerDest to serial2\n' +
-                '  - set Tx SerBaudrate to 115200\n' +
-                '  - put Tx module into FLASH_ESP mode via OLED Actions page\n',
+            'description' :
+                "Flash method: connect to USB (select COM port)\n" +
+                "\nWireless bridge: ESP8285\n" +
+                "For flashing the wireless bridge: \n" +
+                "  - set 'Tx Ser Dest' to serial2\n" +
+                "  - set 'Tx Ser Baudrate' to 115200\n" +
+                "  - put Tx module into FLASH_ESP mode via OLED Actions page\n",
             'wireless' : {
                 'chipset' : 'esp8266',
-                'reset' : 'no dtr', 
+                'reset' : 'no dtr',
                 'baud' : 115200,
             },
         },
         'tx-radiomaster-rp4td' : {},
     },
 
+    #--------------------
+    #-- Internal Tx Modules
+    #--------------------
     # esp32 internal tx module defaults
     # - 'flashmethod' : ...
     # - wireless-bridge: they all currently use a esp8285 backpack, and use the same wirelesss-bridge flash method
     'tx-jumper-internal' : {
-        'description' : 
+        'description' :
             "Supported radios: T20 V2, T15, T14, T-Pro S\n" +
-            "Flash method: radio passthrough\n" + 
-            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n\n" +
-            "Wireless bridge: ESP8285\n" +
+            "Flash method: radio passthrough\n" +
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+            "\nWireless bridge: ESP8285\n" +
             "For flashing the wireless bridge:\n" +
             "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
     },
     'tx-radiomaster-internal' : {
-        'description' : 
+        'description' :
             "Supported radios: TX16S, TX12, MT12, Zorro, Pocket, Boxer\n" +
-            "Flash method: radio passthrough\n" + 
-            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n\n" +
-            "Wireless bridge: ESP8285\n" +
+            "Flash method: radio passthrough\n" +
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+            "\nWireless bridge: ESP8285\n" +
             "For flashing the wireless bridge:\n" +
             "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
         'tx-radiomaster-internal-2400' : {
@@ -127,7 +132,9 @@ g_targetDict = {
         },
     },
 
+    #--------------------
     #-- Receivers
+    #--------------------
     # stm32 defaults:
     # - 'flashmethod' : 'stlink'
     'rx-matek' : {
@@ -141,7 +148,7 @@ g_targetDict = {
     'rx-FRM303' : {},
     'rx-R9' : {},
     'rx-Wio-E5' : {},
-    
+
     # esp defaults:
     # - 'flashmethod' : ??
     'rx-bayck' : {},
