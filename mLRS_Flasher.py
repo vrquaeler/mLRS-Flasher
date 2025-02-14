@@ -595,7 +595,7 @@ def flashDevice(programmer, url, filename, comport=None, baudrate=None):
     create_dir('temp')
     res = getFileAndWriteToDisk(url, os.path.join('temp',filename))
     if not res:
-        print('ERROR: flashDevice()')
+        print('ERROR: flashDevice() [1]')
         return
     #print(os.path.dirname(os.path.abspath(__file__)))
     filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'temp',filename)
@@ -604,16 +604,22 @@ def flashDevice(programmer, url, filename, comport=None, baudrate=None):
         if 'internal' in programmer:
             if ('esp8266' in programmer or 'esp8285' in programmer):
                 flashInternalElrsTxModuleWirelessBridge(programmer, filepath)
+                return
         else:
             if ('esp8266' in programmer or 'esp8285' in programmer):
                 flashEspToolProgrammer(programmer, filepath, comport, baudrate)
+                return
     elif 'stm32' in programmer:
         flashSTM32CubeProgrammer(programmer, filepath)
+        return
     elif 'esp32' in programmer:
         if 'internal' in programmer:
             flashInternalElrsTxModule(programmer, filepath)
+            return
         else:
             flashEspToolProgrammer(programmer, filepath, comport)
+            return
+    print('ERROR: flashDevice() [2]')
 
 
 '''
@@ -840,22 +846,24 @@ class App(ctk.CTk):
         #print('flashTxModuleExternalFirmware()')
         device_type = self.fTxModuleExternal_DeviceType_menu.get()
         firmware_filename = self.fTxModuleExternal_FirmwareFile_menu.get()
-        if 'failed' in device_type or 'failed' in firmware_filename:
+        if 'failed' in firmware_filename:
             print('ERROR: flashTxModuleExternalFirmware() [1]')
             return
         #print(device_type, self.txDeviceTypeDict[device_type])
         #print(firmware_filename)
+        device_type_f = self.txDeviceTypeDict[device_type]['fname']
+        flashmethod, _, _ = self.get_metadata(device_type_f, firmware_filename)
+        if not flashmethod: flashmethod = 'default' # can be None
         #print(self.txFirmwareFilesList)
+        chipset = self.txDeviceTypeDict[device_type]['chipset']
+        #print(chipset)
         for key in self.txFirmwareFilesList:
             if firmware_filename in key['path']: # that's our firmware entry
-                chipset = self.txDeviceTypeDict[device_type]['chipset']
-                #print(chipset)
                 if 'stm32' in chipset:
-                    if 'MatekSys' in device_type: # TODO: the flash method info needs to be per firmware/target!
-                        flashmethod = 'dfu'
+                    if 'dfu' in flashmethod:
+                        flashDevice(chipset + ' dfu', key['url'], firmware_filename)
                     else:
-                        flashmethod = 'stlink'
-                    flashDevice(chipset + ' ' + flashmethod, key['url'], firmware_filename)
+                        flashDevice(chipset + ' stlink', key['url'], firmware_filename)
                     return
                 elif 'esp32' in chipset:
                     comport = self.fTxModuleExternal_ComPort_menu.get()
@@ -869,8 +877,11 @@ class App(ctk.CTk):
         comport = self.fTxModuleExternal_ComPort_menu.get()
         #print('--->',comport)
         device_type = self.fTxModuleExternal_DeviceType_menu.get()
-        device_type_f = self.txDeviceTypeDict[device_type]['fname']
         firmware_filename = self.fTxModuleExternal_FirmwareFile_menu.get()
+        if 'failed' in firmware_filename:
+            print('ERROR: flashTxModuleExternalWirelessBridgeFirmware() [1]')
+            return
+        device_type_f = self.txDeviceTypeDict[device_type]['fname']
         _, _, wireless = self.get_metadata(device_type_f, firmware_filename)
         #print('--->',wireless)
         programmer = 'wirelessbridge'
@@ -893,24 +904,31 @@ class App(ctk.CTk):
     def flashReceiverFirmware(self):
         device_type = self.fReceiver_DeviceType_menu.get()
         firmware_filename = self.fReceiver_FirmwareFile_menu.get()
-        if 'failed' in device_type or 'failed' in firmware_filename:
+        if 'failed' in firmware_filename:
             print('ERROR: flashReceiverFirmware() [1]')
             return
         #print(firmware_filename)
+        device_type_f = self.txDeviceTypeDict[device_type]['fname']
+        flashmethod, _, _ = self.get_metadata(device_type_f, firmware_filename)
+        if not flashmethod: flashmethod = 'default' # can be None
+        #print('--->',flashmethod)
+        chipset = self.rxDeviceTypeDict[device_type]['chipset']
+        #print(chipset)
         #print(self.rxFirmwareFilesList)
         for key in self.rxFirmwareFilesList:
             if firmware_filename in key['path']: # that's our firmware entry
-                if 'MatekSys' in device_type: # TODO: this should be defined in a global structure !!
-                    flashDevice('stm32 dfu', key['url'], firmware_filename)
-                else:
-                    flashDevice('stm32 stlink', key['url'], firmware_filename)
-                return
+                if 'stm32' in chipset:
+                    if 'dfu' in flashmethod:
+                        flashDevice('stm32 dfu', key['url'], firmware_filename)
+                    else:
+                        flashDevice('stm32 stlink', key['url'], firmware_filename) # STLink is default
+                    return
         print('ERROR: flashReceiverFirmware() [2]')
 
     def flashTxModuleInternalFirmware(self):
         device_type = self.fTxModuleInternal_DeviceType_menu.get()
         firmware_filename = self.fTxModuleInternal_FirmwareFile_menu.get()
-        if 'failed' in device_type or 'failed' in firmware_filename:
+        if 'failed' in firmware_filename:
             print('ERROR: flashTxModuleInternalFirmware() [1]')
             return
         for key in self.txIntFirmwareFilesList:
@@ -928,10 +946,11 @@ class App(ctk.CTk):
     # calls getFileAndWriteToDisk() for the selected filename, and saves it
     def saveLuaScript(self, filename):
         #print(filename)
-        if self.firmwareVersionDict == None:
-            return
-        firmware_version = self.fLuaScript_FirmwareVersion_menu.get().split()[0] # remove the added ' (...)' from the version
-        firmware_version_gitUrl = self.firmwareVersionDict[firmware_version]['gitUrl']
+        # hä, what was this good for ??
+        #if self.firmwareVersionDict == None:
+        #    return
+        #firmware_version = self.fLuaScript_FirmwareVersion_menu.get().split()[0] # remove the added ' (...)' from the version
+        #firmware_version_gitUrl = self.firmwareVersionDict[firmware_version]['gitUrl']
         #print(firmware_version, firmware_version_gitUrl)
         if self.luaScriptFilesList == None:
             print('ERROR: saveLuaScript() [1]')
@@ -983,7 +1002,7 @@ class App(ctk.CTk):
         self.updateFirmwareVersions()
 
         self.fTxModuleExternal_Startup()
-        self.updateReceiverFirmwareFiles()
+        self.fReceiver_Startup()
         self.fTxModuleInternal_Startup()
         self.updateLuaScriptFiles()
 
@@ -1024,7 +1043,7 @@ class App(ctk.CTk):
                 flashmethod = device_type_dict['flashmethod']
             if 'description' in device_type_dict.keys():
                 description = device_type_dict['description']
-            #print(device_type_dict)
+            #print("XXXX",device_type_dict)
             #print(firmware_filename)
             if 'failed' not in firmware_filename:
                 for key in device_type_dict.keys(): # search for target entry
@@ -1034,15 +1053,16 @@ class App(ctk.CTk):
                         if 'flashmethod' in target_dict.keys():
                             flashmethod = target_dict['flashmethod']
                         if 'description' in target_dict.keys():
-                            if description == None:
-                                description = target_dict['description']
-                            else:
-                                description = description + '\n' + target_dict['description']
+                            description = target_dict['description']
+                            #if description == None:
+                            #    description = target_dict['description']
+                            #else:
+                            #    description = description + '\n' + target_dict['description']
                         if 'wireless' in target_dict.keys():
                             wireless = target_dict['wireless']
                             #if 'description' in target_dict['wireless'].keys():
                             #    description = target_dict['wireless']['description']
-                    break
+                        break
         return flashmethod, description, wireless
 
 
@@ -1294,8 +1314,8 @@ class App(ctk.CTk):
 
     def fTxModuleExternal_UpdateWidgets(self):
         device_type = self.fTxModuleExternal_DeviceType_menu.get()
-        device_type_f = self.txDeviceTypeDict[device_type]['fname']
         firmware_filename = self.fTxModuleExternal_FirmwareFile_menu.get()
+        device_type_f = self.txDeviceTypeDict[device_type]['fname']
         flashmethod, description, wireless = self.get_metadata(device_type_f, firmware_filename)
         if wireless != None:
             self.fTxModuleExternal_fWirelessBridge.grid()
@@ -1342,6 +1362,7 @@ class App(ctk.CTk):
         self.fReceiver = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.fReceiver.grid_columnconfigure(1, weight=1)
         self.fReceiver.grid_columnconfigure(2, weight=0)
+        self.fReceiver.grid_rowconfigure(4, weight=1)
 
         wrow = 0
 
@@ -1386,15 +1407,43 @@ class App(ctk.CTk):
             text = "Flash Receiver",
             command = self.fReceiver_Flash_button_event)
         self.fReceiver_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
+        wrow += 1
+        
+        #-- Description text box --
+        self.fReceiver_Description_textbox = CTkInfoTextbox(self.fReceiver,
+            #height=100,
+            font=("Courier New",12),
+            )
+        self.fReceiver_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
+        wrow += 1
+
+        self.fReceiver_Description_textbox.grid_remove()
+
+    def fReceiver_UpdateWidgets(self):
+        device_type = self.fReceiver_DeviceType_menu.get()
+        firmware_filename = self.fReceiver_FirmwareFile_menu.get()
+        device_type_f = self.rxDeviceTypeDict[device_type]['fname']
+        _, description, _ = self.get_metadata(device_type_f, firmware_filename)
+        if description != None:
+            self.fReceiver_Description_textbox.grid()
+            self.fReceiver_Description_textbox.setText(description)
+        else:
+            self.fReceiver_Description_textbox.grid_remove()
+
+    def fReceiver_Startup(self):
+        self.updateReceiverFirmwareFiles()
+        self.fReceiver_UpdateWidgets()
 
     def fReceiver_DeviceType_menu_event(self, opt):
         self.updateReceiverFirmwareFiles()
+        self.fReceiver_UpdateWidgets()
 
     def fReceiver_FirmwareVersion_menu_event(self, opt):
         self.updateReceiverFirmwareFiles()
+        self.fReceiver_UpdateWidgets()
 
     def fReceiver_FirmwareFile_menu_event(self, opt):
-        pass
+        self.fReceiver_UpdateWidgets()
 
     def fReceiver_Flash_button_event(self):
         self.flashReceiverFirmware()
@@ -1483,8 +1532,8 @@ class App(ctk.CTk):
 
     def fTxModuleInternal_UpdateWidgets(self):
         device_type = self.fTxModuleInternal_DeviceType_menu.get()
-        device_type_f = self.txIntDeviceTypeDict[device_type]['fname']
         firmware_filename = self.fTxModuleInternal_FirmwareFile_menu.get()
+        device_type_f = self.txIntDeviceTypeDict[device_type]['fname']
         _, description, _ = self.get_metadata(device_type_f, firmware_filename)
         if description != None:
             self.fTxModuleInternal_Description_textbox.grid()
