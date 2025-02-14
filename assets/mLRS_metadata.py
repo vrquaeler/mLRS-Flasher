@@ -56,7 +56,7 @@ g_targetDict = {
     'tx-matek' : {
         'flashmethod' : 'dfu',
         'description' : 
-            'Flash method: DFU, connect to USB\n' +
+            'Flash method: DFU, connect to USB\n\n' +
             'Wireless bridge: HC04, cannot be flashed\n',
     },
     'tx-E77-MBLKit' : {},
@@ -70,12 +70,12 @@ g_targetDict = {
     'tx-betafpv' : {
         'tx-betafpv-micro-1w-2400' : {
             'description' : 
-                'Flash method: connect to USB (select COM port)\n' +
+                'Flash method: connect to USB (select COM port)\n\n' +
                 'Wireless bridge: ESP8285\n' +
                 'Dip switches need to be set as follow:\n' +
-                '  1,2 on:    update firmware on main ESP32, USB is connected to UARTO\n' +
-                '  3,4 on:    normal operation mode, USB is not used, UARTO connected to ESP8285\n' +
-                '  5,6,7 on:  update firmware on ESP8285, USB is connected to ESP8285 UART\n',
+                '  1,2 on:    update firmware on main ESP32, USB connected to UARTO\n' +
+                '  3,4 on:    normal operation mode, USB not used, UARTO connected to ESP8285\n' +
+                '  5,6,7 on:  update firmware on ESP8285, USB connected to ESP8285 UART\n',
             'wireless' : {
                 'chipset' : 'esp8266', 
                 'reset' : 'dtr', 
@@ -86,11 +86,11 @@ g_targetDict = {
     'tx-radiomaster' : {
         'tx-radiomaster-bandit' : {
             'description' : 
-                'Flash method: connect to USB (select COM port)\n' +
+                'Flash method: connect to USB (select COM port)\n\n' +
                 'Wireless bridge: ESP8285\n' +
                 'For flashing the wireless bridge: \n' +
-                '  - set SerDest to serial2\n' +
-                '  - set SerBaudrate to 115200\n' +
+                '  - set Tx SerDest to serial2\n' +
+                '  - set Tx SerBaudrate to 115200\n' +
                 '  - put Tx module into FLASH_ESP mode via OLED Actions page\n',
             'wireless' : {
                 'chipset' : 'esp8266',
@@ -108,7 +108,7 @@ g_targetDict = {
         'description' : 
             "Supported radios: T20 V2, T15, T14, T-Pro S\n" +
             "Flash method: radio passthrough\n" + 
-            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n\n" +
             "Wireless bridge: ESP8285\n" +
             "For flashing the wireless bridge:\n" +
             "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
@@ -117,7 +117,7 @@ g_targetDict = {
         'description' : 
             "Supported radios: TX16S, TX12, MT12, Zorro, Pocket, Boxer\n" +
             "Flash method: radio passthrough\n" + 
-            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n\n" +
             "Wireless bridge: ESP8285\n" +
             "For flashing the wireless bridge:\n" +
             "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",

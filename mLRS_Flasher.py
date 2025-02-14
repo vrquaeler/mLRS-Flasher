@@ -932,7 +932,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title('mLRS Flasher Desktop App '+app_version)
-        self.geometry('700x500')
+        self.geometry('800x600')
         #self.iconbitmap(os.path.join('assets','mLRS_logo_round.ico')) # does not work on Mac
         self.wm_iconbitmap()
         self.iconphoto(False, ImageTk.PhotoImage(file = os.path.join('assets','mLRS_logo_round.ico')))
@@ -1185,7 +1185,7 @@ class App(ctk.CTk):
         self.fTxModuleExternal_DeviceType_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fTxModuleExternal_DeviceType_menu = ctk.CTkOptionMenu(self.fTxModuleExternal,
             values=["downloading..."],
-            width=300, # this sets a min width, can grow larger
+            width=440, # this sets a min width, can grow larger
             #dynamic_resizing = False, # when false it prevents the box to grow with the entry
             command=self.fTxModuleExternal_DeviceType_menu_event)
         self.fTxModuleExternal_DeviceType_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
@@ -1198,7 +1198,7 @@ class App(ctk.CTk):
         self.fTxModuleExternal_FirmwareVersion_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fTxModuleExternal_FirmwareVersion_menu = ctk.CTkOptionMenu(self.fTxModuleExternal,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fTxModuleExternal_FirmwareVersion_menu_event)
         self.fTxModuleExternal_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1210,7 +1210,7 @@ class App(ctk.CTk):
         self.fTxModuleExternal_FirmwareFile_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fTxModuleExternal_FirmwareFile_menu = ctk.CTkOptionMenu(self.fTxModuleExternal,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fTxModuleExternal_FirmwareFile_menu_event)
         self.fTxModuleExternal_FirmwareFile_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1222,7 +1222,8 @@ class App(ctk.CTk):
 
         self.fTxModuleExternal_Flash_button = ctk.CTkButton(self.fTxModuleExternal_fFlash,
             text = "Flash Tx Module",
-            command = self.fTxModuleExternal_Flash_button_event)
+            command = self.fTxModuleExternal_Flash_button_event,
+            fg_color="green", hover_color="#006400")
         self.fTxModuleExternal_Flash_button.grid(row=0, column=0)
 
         self.fTxModuleExternal_ComPort_menu = CTkCompPortOptionMenu(self.fTxModuleExternal_fFlash,
@@ -1247,7 +1248,8 @@ class App(ctk.CTk):
 
         self.fTxModuleExternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleExternal_fWirelessBridge,
             text = "Flash Wireless Bridge",
-            command = self.fTxModuleExternal_WirelessBridgeFlash_button_event)
+            command = self.fTxModuleExternal_WirelessBridgeFlash_button_event,
+            fg_color="green", hover_color="#006400")
         self.fTxModuleExternal_WirelessBridgeFlash_button.grid(row=1, column=0, pady=(20,0))
 
         #-- Description text box --
@@ -1330,7 +1332,7 @@ class App(ctk.CTk):
         self.fReceiver_DeviceType_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fReceiver_DeviceType_menu = ctk.CTkOptionMenu(self.fReceiver,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fReceiver_DeviceType_menu_event)
         self.fReceiver_DeviceType_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1342,7 +1344,7 @@ class App(ctk.CTk):
         self.fReceiver_FirmwareVersion_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fReceiver_FirmwareVersion_menu = ctk.CTkOptionMenu(self.fReceiver,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fReceiver_FirmwareVersion_menu_event)
         self.fReceiver_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1354,7 +1356,7 @@ class App(ctk.CTk):
         self.fReceiver_FirmwareFile_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fReceiver_FirmwareFile_menu = ctk.CTkOptionMenu(self.fReceiver,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fReceiver_FirmwareFile_menu_event)
         self.fReceiver_FirmwareFile_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1362,7 +1364,8 @@ class App(ctk.CTk):
         # Flash Button
         self.fReceiver_Flash_button = ctk.CTkButton(self.fReceiver,
             text = "Flash Receiver",
-            command = self.fReceiver_Flash_button_event)
+            command = self.fReceiver_Flash_button_event,
+            fg_color="green", hover_color="#006400")
         self.fReceiver_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
 
     def fReceiver_DeviceType_menu_event(self, opt):
@@ -1396,7 +1399,7 @@ class App(ctk.CTk):
         self.fTxModuleInternal_DeviceType_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fTxModuleInternal_DeviceType_menu = ctk.CTkOptionMenu(self.fTxModuleInternal,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fTxModuleInternal_DeviceType_menu_event)
         self.fTxModuleInternal_DeviceType_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1408,7 +1411,7 @@ class App(ctk.CTk):
         self.fTxModuleInternal_FirmwareVersion_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fTxModuleInternal_FirmwareVersion_menu = ctk.CTkOptionMenu(self.fTxModuleInternal,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fTxModuleInternal_FirmwareVersion_menu_event)
         self.fTxModuleInternal_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1420,7 +1423,7 @@ class App(ctk.CTk):
         self.fTxModuleInternal_FirmwareFile_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fTxModuleInternal_FirmwareFile_menu = ctk.CTkOptionMenu(self.fTxModuleInternal,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fTxModuleInternal_FirmwareFile_menu_event)
         self.fTxModuleInternal_FirmwareFile_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1428,7 +1431,8 @@ class App(ctk.CTk):
         # Flash Button
         self.fTxModuleInternal_Flash_button = ctk.CTkButton(self.fTxModuleInternal,
             text = "Flash Tx Module",
-            command = self.fTxModuleInternal_Flash_button_event)
+            command = self.fTxModuleInternal_Flash_button_event,
+            fg_color="green", hover_color="#006400")
         self.fTxModuleInternal_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 
@@ -1446,7 +1450,8 @@ class App(ctk.CTk):
 
         self.fTxModuleInternal_WirelessBridgeFlash_button = ctk.CTkButton(self.fTxModuleInternal_fWirelessBridge,
             text = "Flash Wireless Bridge",
-            command = self.fTxModuleInternal_WirelessBridgeFlash_button_event)
+            command = self.fTxModuleInternal_WirelessBridgeFlash_button_event,
+            fg_color="green", hover_color="#006400")
         self.fTxModuleInternal_WirelessBridgeFlash_button.grid(row=1, column=0, pady=(20,0))
 
         #-- Description text box --
@@ -1509,7 +1514,7 @@ class App(ctk.CTk):
         self.fLuaScript_FirmwareVersion_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fLuaScript_FirmwareVersion_menu = ctk.CTkOptionMenu(self.fLuaScript,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fLuaScript_FirmwareVersion_menu_event)
         self.fLuaScript_FirmwareVersion_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1521,7 +1526,7 @@ class App(ctk.CTk):
         self.fLuaScript_RadioScreen_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fLuaScript_RadioScreen_menu = ctk.CTkOptionMenu(self.fLuaScript,
             values=["downloading..."],
-            width=300,
+            width=440,
             command=self.fLuaScript_RadioScreen_menu_event)
         self.fLuaScript_RadioScreen_menu.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
@@ -1529,7 +1534,8 @@ class App(ctk.CTk):
         # Download Color Script Button
         self.fLuaScript_Download_button = ctk.CTkButton(self.fLuaScript,
             text = "Download Lua Script",
-            command = self.fLuaScript_Download_button_event)
+            command = self.fLuaScript_Download_button_event,
+            fg_color="green", hover_color="#006400")
         self.fLuaScript_Download_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 
