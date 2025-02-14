@@ -251,17 +251,17 @@ class InternalTx():
             return None
         return res
 
-    def open_passthrough(self, baudrate = 115200, wirelessbridge = None):
+    def openPassthrough(self, baudrate = 115200, wirelessbridge = None):
         print()
         print('*** 1. Finding COM port of your radio ***')
         print()
 
         radioports_list = find_radio_serial_ports()
         if len(radioports_list) != 1:
-            do_msg('Please power up your radio, connect the USB, and select "USB Serial (VCP)".')
+            self.do_msg('Please power up your radio, connect the USB, and select "USB Serial (VCP)".')
             radioports_list = find_radio_serial_ports()
             if len(radioports_list) != 1:
-                do_error('Sorry, something went wrong and we could not find the com port of your radio.')
+                self.do_error('Sorry, something went wrong and we could not find the com port of your radio.')
         radioport = radioports_list[0]
         print('Your radio is on com port', radioport)
 
@@ -269,7 +269,7 @@ class InternalTx():
             s = serial.Serial(radioport)
             s.close()
         except:
-            do_error('Sorry, something went wrong and we could not open the com port of your radio.')
+            self.do_error('Sorry, something went wrong and we could not open the com port of your radio.')
 
         print()
         print('*** 2. Opening passthrough to the internal Tx Module ***')
@@ -285,30 +285,30 @@ class InternalTx():
         if not res:
             res = self.execute_cli_command(ser, b'set pulses 0', expected = b'pulses stop') # give it a 2nd try
             if not res:
-                do_error('Sorry, something went wrong.')
+                self.do_error('Sorry, something went wrong.')
 
         if not wirelessbridge:
             res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
             if not res:
-                do_error('Sorry, something went wrong.')
+                self.do_error('Sorry, something went wrong.')
             time.sleep(.1)
 
         res = self.execute_cli_command(ser, b'set rfmod 0 power off')
         if not res:
-            do_error('Sorry, something went wrong.')
+            self.do_error('Sorry, something went wrong.')
         time.sleep(1)
         res = self.execute_cli_command(ser, b'set rfmod 0 power on')
         if not res:
-            do_error('Sorry, something went wrong.')
+            self.do_error('Sorry, something went wrong.')
         time.sleep(1)
 
         res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
         if not res:
-            do_error('Sorry, something went wrong.')
+            self.do_error('Sorry, something went wrong.')
         time.sleep(1)
         res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 0', expected = b'bootpin reset')
         if not res:
-            do_error('Sorry, something went wrong.')
+            self.do_error('Sorry, something went wrong.')
 
         cmd = b'serialpassthrough rfmod 0 ' + str(baudrate).encode('utf-8') + b'\n'
         ser.write(cmd)
@@ -319,7 +319,7 @@ class InternalTx():
 
         return radioport
 
-    def flash_esp32(self, firmware, radioport, baudrate = 115200):
+    def flashEsp32(self, firmware, radioport, baudrate = 115200):
         print()
         print('*** 3. Flashing the internal Tx Module ***')
         print()
@@ -335,7 +335,7 @@ class InternalTx():
         print('Please remove the USB cable.')
         print('Cheers, and have fun.')
 
-    def flash_esp8266_wirelessbridge(self, firmware, radioport, baudrate = 115200):
+    def flashEsp8266Wirelessbridge(self, firmware, radioport, baudrate = 115200):
         print()
         print('*** 3. Flashing the wireless bridge of the internal Tx Module ***')
         print()
@@ -360,15 +360,15 @@ def flashInternalElrsTxModule(programmer, firmware):
     #print(filename)
     #print(programmer)
     baudrate = 921600
-    radioport = internalTx.open_passthrough(baudrate)
-    internalTx.flash_esp32(firmware, radioport, baudrate)
+    radioport = internalTx.openPassthrough(baudrate)
+    internalTx.flashEsp32(firmware, radioport, baudrate)
 
 
 def flashInternalElrsTxModuleWirelessBridge(programmer, firmware):
     #print(programmer)
     baudrate = 115200
-    radioport = internalTx.open_passthrough(baudrate, wirelessbridge = True)
-    internalTx.flash_esp8266_wirelessbridge(firmware, radioport, baudrate)
+    radioport = internalTx.openPassthrough(baudrate, wirelessbridge = True)
+    internalTx.flashEsp8266Wirelessbridge(firmware, radioport, baudrate)
 
 
 '''
