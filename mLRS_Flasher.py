@@ -1043,6 +1043,8 @@ class App(ctk.CTk):
                 flashmethod = device_type_dict['flashmethod']
             if 'description' in device_type_dict.keys():
                 description = device_type_dict['description']
+            if 'wireless' in device_type_dict.keys():
+                wireless = device_type_dict['wireless']
             #print("XXXX",device_type_dict)
             #print(firmware_filename)
             if 'failed' not in firmware_filename:
