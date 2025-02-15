@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #*******************************************************
 # mLRS Flasher Desktop App
-# 14. Feb. 2025 001
+# 15. Feb. 2025 001
 #********************************************************
-app_version = '13.02.2025-001'
+app_version = '15.02.2025-001'
 
 import os, sys, time
 import subprocess
@@ -47,7 +47,7 @@ def os_system(arg):
     if res != 0:
         print('# ERROR (errno =',res,') DONE #')
         os.system("pause")
-        exit(1)
+        sys.exit(1)
 
 def find_serial_ports():
     try:
@@ -230,7 +230,7 @@ class InternalTx():
         print(msg)
         print('Press Enter to continue')
         input()
-        exit(1)
+        sys.exit(1)
 
     def execute_cli_command(self, ser, cmd, expected=None, timeout=1.0):
         ser.write(cmd+b'\n')
@@ -1527,7 +1527,7 @@ class App(ctk.CTk):
         self.fTxModuleInternal_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
         wrow += 1
         
-        #self.fTxModuleInternal_fWirelessBridge.grid_remove() # pack_forget() did not work!
+        self.fTxModuleInternal_fWirelessBridge.grid_remove() # pack_forget() did not work!
         self.fTxModuleInternal_Description_textbox.grid_remove()
 
     def fTxModuleInternal_UpdateWidgets(self):
