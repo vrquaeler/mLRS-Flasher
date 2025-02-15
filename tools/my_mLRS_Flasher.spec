@@ -19,6 +19,7 @@ a = Analysis(
     datas=[
         (path + 'assets' , 'assets'),
         (path + 'thirdparty/esptool' , 'thirdparty/esptool'),
+        (path + 'edgetxInitPassthru.py' , '.'),
         (path + 'thirdparty/STM32CubeProgrammer/win' , 'thirdparty/STM32CubeProgrammer/win'),
 		# important: pyinstaller ssems to not be able to inlcude CustomTkInter
 		# https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
