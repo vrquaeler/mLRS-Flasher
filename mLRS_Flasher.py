@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #*******************************************************
 # mLRS Flasher Desktop App
-# 15. Feb. 2025 001
+# 15. Feb. 2025 002
 #********************************************************
-app_version = '15.02.2025-001'
+app_version = '15.02.2025-002'
 
 import os, sys, time
 import subprocess
@@ -54,6 +54,9 @@ def os_system_run_as_bat():
     if os.name == 'posix': return False
     return True
 
+def os_system_is_frozen_app():
+    #return False
+    return getattr(sys, 'frozen', False)
 
 def find_serial_ports():
     try:
@@ -94,6 +97,7 @@ def flash_stm32cubeprogrammer_win(programmer, firmware):
     F.write('@ECHO.'+'\n\r')
     F.write('@ECHO Cheers, and have fun.'+'\n\r')
 ###    F.write('@pause'+'\n\r')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n\r')
     F.close()
     os_system('mlrs_flasher_runner.bat')
     
@@ -213,6 +217,7 @@ def flash_esptool_win(programmer, firmware, comport, baudrate):
     F.write('@ECHO.'+'\n\r')
     F.write('@ECHO Cheers, and have fun.'+'\n\r')
 ###    F.write('@pause'+'\n\r')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n\r')
     F.close()
     os_system('mlrs_flasher_runner.bat')
 
@@ -281,6 +286,7 @@ def flash_internal_elrs_tx_module_win(firmware, wirelessbridge=False):
     F.write('@ECHO Please remove the USB cable.'+'\n\r')
     F.write('@ECHO Cheers, and have fun.'+'\n\r')
 ###    F.write('@pause'+'\n\r')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n\r')
     F.close()
     os_system('mlrs_flasher_runner.bat')
 
