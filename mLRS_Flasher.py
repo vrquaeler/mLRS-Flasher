@@ -49,6 +49,12 @@ def os_system(arg):
         os.system("pause")
         sys.exit(1)
 
+def os_system_run_as_bat():
+    #return False
+    if os.name == 'posix': return False
+    return True
+
+
 def find_serial_ports():
     try:
         from serial.tools.list_ports import comports
@@ -68,6 +74,30 @@ STLink Flashing Tools
 --------------------------------------------------
 '''
 
+def flash_stm32cubeprogrammer_argstr(programmer, firmware):
+    if 'dfu' in programmer:
+        args = '-c port=usb1 -w "'+firmware+'" -v -g'
+    else:
+        args = '-c port=SWD freq=3900 -w "'+firmware+'" -v -g'
+    return args    
+
+
+def flash_stm32cubeprogrammer_win(programmer, firmware):
+    ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
+    args = flash_stm32cubeprogrammer_argstr(programmer, firmware)
+    #temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
+    F.write(ST_Programmer + ' ' + args)
+    F.write('\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO *** DONE ***'+'\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO Cheers, and have fun.'+'\n\r')
+###    F.write('@pause'+'\n\r')
+    F.close()
+    os_system('mlrs_flasher_runner.bat')
+    
+
 def flash_stm32cubeprogrammer(programmer, firmware):
     if sys.platform.lower() == 'darwin':
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','mac','bin','STM32_Programmer_CLI')
@@ -75,14 +105,16 @@ def flash_stm32cubeprogrammer(programmer, firmware):
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','linux','bin','STM32_Programmer_CLI')
     else:
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
-    if 'dfu' in programmer:
-        #os_system([ST_Programmer, '-c port=usb1', '-w "'+firmware+'"', '-v', '-g'])
-        os_system(ST_Programmer + ' -c port=usb1 -w "'+firmware+'" -v -g')
-    else:
-        os_system(ST_Programmer + ' -c port=SWD freq=3900 -w "'+firmware+'" -v -g')
+    args = flash_stm32cubeprogrammer_argstr(programmer, firmware)
+    os_system(ST_Programmer + ' ' + args)
 
 
 def flashSTM32CubeProgrammer(programmer, firmware):
+    if os_system_run_as_bat():
+        print('Run on Windows as batch file')
+        flash_stm32cubeprogrammer_win(programmer, firmware)
+        return
+
     flash_stm32cubeprogrammer(programmer, firmware)
     print()
     print('*** DONE ***')
@@ -123,7 +155,7 @@ def find_esp_device_serial_ports():
     return deviceportList
 
 
-def flash_esptool(programmer, firmware, comport, baudrate):
+def flash_esptool_argstr(programmer, firmware, comport, baudrate):
     assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
     if 'esp32' in programmer:
         args = (
@@ -166,14 +198,39 @@ def flash_esptool(programmer, firmware, comport, baudrate):
             '0x0 ' +
             '"' + firmware + '"'
             )
-    print(args)
+    #print(args)
+    #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
+    return args
+
+
+def flash_esptool_win(programmer, firmware, comport, baudrate):
+    esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
+
+    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
+    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO *** DONE ***'+'\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO Cheers, and have fun.'+'\n\r')
+###    F.write('@pause'+'\n\r')
+    F.close()
+    os_system('mlrs_flasher_runner.bat')
+
+
+def flash_esptool(programmer, firmware, comport, baudrate):
+    esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
     #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
 
     # TODO: can we catch if this was succesful?
-    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + args)
+    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args)
 
 
-def flashEspToolProgrammer(programmer, firmware, comport, baudrate=921600):
+def flashEspToolProgrammer(programmer, firmware, comport, baudrate):
+    if os_system_run_as_bat():
+        print('Run on Windows as batch file')
+        flash_esptool_win(programmer, firmware, comport, baudrate)
+        return
+
     # firmware filename gives the complete path
     #print('flashEspToolProgrammer()')
     #print(programmer)
@@ -199,176 +256,93 @@ Internal Tx Module Flashing Tools
 --------------------------------------------------
 '''
 
-def find_radio_serial_ports():
-    '''
-    EdgeTx/OpenTx radio serial port is known to have vid == 0x0483, pid = 0x5740
-    '''
-    try:
-        from serial.tools.list_ports import comports
-        portList = list(comports())
-    except:
-        print('ERROR: find_radio_serial_port() [1]')
-        return None
-    radioportList = []
-    for port in portList:
-        if port.vid == 0x0483 and port.pid == 0x5740:
-            if os.name == 'posix': # we do have more info on this os
-                if port.manufacturer == 'OpenTX':
-                    radioportList.append(port.device)
-            else:
-                radioportList.append(port.device)
-    return radioportList
+def flash_internal_elrs_tx_module_win(firmware, wirelessbridge=False):
+    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+    if wirelessbridge:
+        baudrate = 115200
+        passthru_args = '-b '+str(baudrate)+' --wirelessbridge'
+        esptool_args = flash_esptool_argstr('esp8266', os.path.join(temp_path, firmware), 'COM%RADIOPORT%', baudrate)
+    else:
+        baudrate = 921600
+        passthru_args = '-b '+str(baudrate)
+        esptool_args = flash_esptool_argstr('esp32', os.path.join(temp_path, firmware), 'COM%RADIOPORT%', baudrate)
+    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
+    F.write('@edgetxInitPassthru.py ' + passthru_args +'\n\r')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n\r')
+    F.write('@if %ERRORLEVEL% LEQ 0 set /a RADIOPORT=-%ERRORLEVEL%'+'\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO *** 3. Flashing the internal Tx Module ***'+'\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO The firmware to flash is: '+firmware+'\n\r')
+    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO *** DONE ***'+'\n\r')
+    F.write('@ECHO.'+'\n\r')
+    F.write('@ECHO Please remove the USB cable.'+'\n\r')
+    F.write('@ECHO Cheers, and have fun.'+'\n\r')
+###    F.write('@pause'+'\n\r')
+    F.close()
+    os_system('mlrs_flasher_runner.bat')
+
+#flash_internal_elrs_tx_module_win('tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
+#exit(1)
 
 
-class InternalTx():
-    def do_msg(self, msg):
-        print(msg)
-        print('Press Enter to continue')
-        input()
-
-    def do_error(self, msg):
-        print(msg)
-        print('Press Enter to continue')
-        input()
-        sys.exit(1)
-
-    def execute_cli_command(self, ser, cmd, expected=None, timeout=1.0):
-        ser.write(cmd+b'\n')
-        res = b''
-        tstart = time.perf_counter() #tstart = time.time()
-        while True:
-            tnow = time.perf_counter()
-            if tnow - tstart > timeout:
-                return None
-            if ser.inWaiting() > 0:
-                res += ser.read(1)
-            if res[-4:] == b'\r\n> ': # we got it
-                break
-        #resList = res.split(b'\r\n')
-        #print(resList)
-        print(res)
-        if expected and not expected in res:
-            return None
-        return res
-
-    def openPassthrough(self, baudrate = 115200, wirelessbridge = None):
-        print()
-        print('*** 1. Finding COM port of your radio ***')
-        print()
-
-        radioports_list = find_radio_serial_ports()
-        if len(radioports_list) != 1:
-            self.do_msg('Please power up your radio, connect the USB, and select "USB Serial (VCP)".')
-            radioports_list = find_radio_serial_ports()
-            if len(radioports_list) != 1:
-                self.do_error('Sorry, something went wrong and we could not find the com port of your radio.')
-        radioport = radioports_list[0]
-        print('Your radio is on com port', radioport)
-
-        try:
-            s = serial.Serial(radioport)
-            s.close()
-        except:
-            self.do_error('Sorry, something went wrong and we could not open the com port of your radio.')
-
-        print()
-        print('*** 2. Opening passthrough to the internal Tx Module ***')
-        print()
-
-        # This procedure seems to work independent on the selected Model
-        # Seems to also work fine when the internal module is OFF
-
-        ser = serial.Serial(radioport, timeout=0)
-        ser.flush()
-
-        res = self.execute_cli_command(ser, b'set pulses 0', expected = b'pulses stop')
-        if not res:
-            res = self.execute_cli_command(ser, b'set pulses 0', expected = b'pulses stop') # give it a 2nd try
-            if not res:
-                self.do_error('Sorry, something went wrong.')
-
-        if not wirelessbridge:
-            res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
-            if not res:
-                self.do_error('Sorry, something went wrong.')
-            time.sleep(.1)
-
-        res = self.execute_cli_command(ser, b'set rfmod 0 power off')
-        if not res:
-            self.do_error('Sorry, something went wrong.')
-        time.sleep(1)
-        res = self.execute_cli_command(ser, b'set rfmod 0 power on')
-        if not res:
-            self.do_error('Sorry, something went wrong.')
-        time.sleep(1)
-
-        res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
-        if not res:
-            self.do_error('Sorry, something went wrong.')
-        time.sleep(1)
-        res = self.execute_cli_command(ser, b'set rfmod 0 bootpin 0', expected = b'bootpin reset')
-        if not res:
-            self.do_error('Sorry, something went wrong.')
-
-        cmd = b'serialpassthrough rfmod 0 ' + str(baudrate).encode('utf-8') + b'\n'
-        ser.write(cmd)
-        print(cmd)
-
-        time.sleep(0.5)
-        ser.close()
-
-        return radioport
-
-    def flashEsp32(self, firmware, radioport, baudrate = 115200):
-        print()
-        print('*** 3. Flashing the internal Tx Module ***')
-        print()
-        print('The firmware to flash is:', firmware)
-
-        temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-        # TODO: can we catch if this was succesfull?
-        flash_esptool('esp32', os.path.join(temp_path, firmware), radioport, baudrate)
-
-        print()
-        print('*** DONE ***')
-        print()
-        print('Please remove the USB cable.')
-        print('Cheers, and have fun.')
-
-    def flashEsp8266Wirelessbridge(self, firmware, radioport, baudrate = 115200):
-        print()
-        print('*** 3. Flashing the wireless bridge of the internal Tx Module ***')
-        print()
-        print('The firmware to flash is:', firmware)
-
-        temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-        # TODO: can we catch if this was succesfull?
-        #flash_esptool('esp8266', os.path.join(assets_path,'wirelessbridge-esp8266',firmware), radioport, baudrate)
-        flash_esptool('esp8266', os.path.join(temp_path,firmware), radioport, baudrate)
-
-        print()
-        print('*** DONE ***')
-        print()
-        print('Please remove the USB cable.')
-        print('Cheers, and have fun.')
-
-internalTx = InternalTx()
+import edgetxInitPassthru as radio
 
 
 def flashInternalElrsTxModule(programmer, firmware):
+    if os_system_run_as_bat():
+        print('Run on Windows as batch file')
+        flash_internal_elrs_tx_module_win(firmware, wirelessbridge = False)
+        return
+
     # firmware filename gives the complete path
     #print(filename)
     #print(programmer)
     baudrate = 921600
-    radioport = internalTx.openPassthrough(baudrate)
-    internalTx.flashEsp32(firmware, radioport, baudrate)
+    radioport = radio.open_passthrough(baudrate)
+    
+    print()
+    print('*** 3. Flashing the internal Tx Module ***')
+    print()
+    print('The firmware to flash is:', firmware)
+
+    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+    # TODO: can we catch if this was succesfull?
+    flash_esptool('esp32', os.path.join(temp_path, firmware), radioport, baudrate)
+
+    print()
+    print('*** DONE ***')
+    print()
+    print('Please remove the USB cable.')
+    print('Cheers, and have fun.')
 
 
 def flashInternalElrsTxModuleWirelessBridge(programmer, firmware):
+    if os_system_run_as_bat():
+        print('Run on Windows as batch file')
+        flash_internal_elrs_tx_module_win(firmware, wirelessbridge = True)
+        return
+
     #print(programmer)
     baudrate = 115200
-    radioport = internalTx.openPassthrough(baudrate, wirelessbridge = True)
-    internalTx.flashEsp8266Wirelessbridge(firmware, radioport, baudrate)
+    radioport = radio.open_passthrough(baudrate, wirelessbridge = True)
+    
+    print()
+    print('*** 3. Flashing the wireless bridge of the internal Tx Module ***')
+    print()
+    print('The firmware to flash is:', firmware)
+
+    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+    # TODO: can we catch if this was succesfull?
+    flash_esptool('esp8266', os.path.join(temp_path,firmware), radioport, baudrate)
+
+    print()
+    print('*** DONE ***')
+    print()
+    print('Please remove the USB cable.')
+    print('Cheers, and have fun.')
 
 
 '''
@@ -617,7 +591,7 @@ def flashDevice(programmer, url, filename, comport=None, baudrate=None):
             flashInternalElrsTxModule(programmer, filepath)
             return
         else:
-            flashEspToolProgrammer(programmer, filepath, comport)
+            flashEspToolProgrammer(programmer, filepath, comport, baudrate)
             return
     print('ERROR: flashDevice() [2]')
 
@@ -868,7 +842,7 @@ class App(ctk.CTk):
                 elif 'esp32' in chipset:
                     comport = self.fTxModuleExternal_ComPort_menu.get()
                     print('--->',comport)
-                    flashDevice(chipset, key['url'], firmware_filename, comport=comport)
+                    flashDevice(chipset, key['url'], firmware_filename, comport=comport, baudrate=921600)
                     return
         print('ERROR: flashTxModuleExternalFirmware() [2]')
         
@@ -885,7 +859,6 @@ class App(ctk.CTk):
         _, _, wireless = self.get_metadata(device_type_f, firmware_filename)
         #print('--->',wireless)
         programmer = 'wirelessbridge'
-        baudrate = 921600
         if 'chipset' in wireless:
             programmer = programmer + ' ' + wireless['chipset']
         else:
@@ -896,6 +869,8 @@ class App(ctk.CTk):
             programmer = programmer + ' dtr'
         if 'baud' in wireless:
             baudrate = wireless['baud']
+        else:    
+            baudrate = 921600
         url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
         firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
         flashDevice(programmer, url, firmware_filename, comport, baudrate)
