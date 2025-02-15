@@ -4,10 +4,11 @@
 # GPL3
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 #*******************************************************
-# 1. Feb. 2025
+# 15. Feb. 2025
 #********************************************************
 
-import time, serial, argparse
+import os, sys, time
+import serial, argparse
 
 
 '''
@@ -47,7 +48,7 @@ def do_error(msg):
     print(msg)
     print('Press Enter to continue')
     input()
-    exit(1)
+    sys.exit(1)
 
 
 def execute_cli_command(ser, cmd, expected=None, timeout=1.0):
@@ -142,6 +143,8 @@ def open_passthrough(baudrate = 115200, wirelessbridge = None):
     else:
         print('You are ready to flash the internal Tx module now!')
 
+    return radioport
+
 
 #--------------------------------------------------
 #-- Main
@@ -155,4 +158,8 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--wirelessbridge", action='store_true', help = 'Wirelessbridge passthrough')
     args = parser.parse_args()
 
-    open_passthrough(baudrate = args.baud, wirelessbridge = args.wirelessbridge)
+    radioport = open_passthrough(baudrate = args.baud, wirelessbridge = args.wirelessbridge)
+    
+    if os.name != 'posix': # windows
+        exit(-int(radioport[3:]))
+
