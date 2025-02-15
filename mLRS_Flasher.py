@@ -1534,7 +1534,11 @@ class App(ctk.CTk):
         device_type = self.fTxModuleInternal_DeviceType_menu.get()
         firmware_filename = self.fTxModuleInternal_FirmwareFile_menu.get()
         device_type_f = self.txIntDeviceTypeDict[device_type]['fname']
-        _, description, _ = self.get_metadata(device_type_f, firmware_filename)
+        _, description, wireless = self.get_metadata(device_type_f, firmware_filename)
+        if wireless != None:
+            self.fTxModuleInternal_fWirelessBridge.grid()
+        else:
+            self.fTxModuleInternal_fWirelessBridge.grid_remove()
         if description != None:
             self.fTxModuleInternal_Description_textbox.grid()
             self.fTxModuleInternal_Description_textbox.setText(description)

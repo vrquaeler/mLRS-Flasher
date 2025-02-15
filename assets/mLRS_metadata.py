@@ -142,6 +142,10 @@ g_targetDict = {
             "\nWireless bridge: ESP8285\n" +
             "For flashing the wireless bridge:\n" +
             "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
+        'wireless' : {
+            'chipset' : 'esp8266',
+            'baud' : 115200,
+        },
     },
     'tx-radiomaster-internal' : {
         'description' :
@@ -151,6 +155,10 @@ g_targetDict = {
             "\nWireless bridge: ESP8285\n" +
             "For flashing the wireless bridge:\n" +
             "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
+        'wireless' : {
+            'chipset' : 'esp8266',
+            'baud' : 115200,
+        },
         'tx-radiomaster-internal-2400' : {
         },
         'tx-radiomaster-internal-boxer' : {
