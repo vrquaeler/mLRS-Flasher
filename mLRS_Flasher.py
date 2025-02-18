@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-#*******************************************************
+#************************************************************
 # Copyright (c) MLRS project
 # GPL3
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 # OlliW @ www.olliw.eu
-#*******************************************************
+#************************************************************
 # mLRS Flasher Desktop App
-# 15. Feb. 2025 002
-#********************************************************
-app_version = '15.02.2025-002'
+# 18. Feb. 2025 001
+#************************************************************
+app_version = '18.02.2025-001'
 
 import os, sys, time
 import subprocess
@@ -42,12 +42,13 @@ def create_dir(path):
     if not os.path.exists(path):
         make_dir(path)
 
-def os_system(arg):
+def os_system(arg, allow_neg_res=False):
     res = os.system(arg)
-    if res != 0:
+    if res > 0 or (not allow_neg_res and res < 0):
         print('# ERROR (errno =',res,') DONE #')
         os.system("pause")
         sys.exit(1)
+    return res    
 
 def os_system_run_as_bat():
     #return False
@@ -77,9 +78,11 @@ STLink Flashing Tools
 --------------------------------------------------
 '''
 
-def flash_stm32cubeprogrammer_argstr(programmer, firmware):
+def flash_stm32cubeprogrammer_argstr(programmer, firmware, comport=None, baudrate=None):
     if 'dfu' in programmer:
         args = '-c port=usb1 -w "'+firmware+'" -v -g'
+    elif 'uart' in programmer:
+        args = ' -c port="'+comport+'" br='+str(baudrate)+' -w "' + firmware +'" -v -g'
     else:
         args = '-c port=SWD freq=3900 -w "'+firmware+'" -v -g'
     return args    
@@ -90,40 +93,90 @@ def flash_stm32cubeprogrammer_win(programmer, firmware):
     args = flash_stm32cubeprogrammer_argstr(programmer, firmware)
     #temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write(ST_Programmer + ' ' + args)
-    F.write('\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO *** DONE ***'+'\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO Cheers, and have fun.'+'\n\r')
-###    F.write('@pause'+'\n\r')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n\r')
+    F.write(ST_Programmer + ' ' + args +'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO *** DONE ***'+'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO Cheers, and have fun.'+'\n')
+###    F.write('@pause'+'\n')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat')
-    
 
-def flash_stm32cubeprogrammer(programmer, firmware):
+
+def flash_stm32cubeprogrammer(programmer, firmware, comport=None, baudrate=None):
     if sys.platform.lower() == 'darwin':
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','mac','bin','STM32_Programmer_CLI')
     elif sys.platform.lower() == 'linux':
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','linux','bin','STM32_Programmer_CLI')
     else:
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
-    args = flash_stm32cubeprogrammer_argstr(programmer, firmware)
+    args = flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate)
     os_system(ST_Programmer + ' ' + args)
 
 
+def flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware):
+    ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
+    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
+    F.write('@apInitPassthru.py -findport'+'\n')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
+    F.write('@if %ERRORLEVEL% LEQ 0 set /a PORT=-%ERRORLEVEL%'+'\n')
+    F.write('@apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
+    F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
+    F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE%'+'\n')
+    F.write('@timeout /t 5 /nobreak'+'\n')
+    F.write(ST_Programmer + ' -c port="COM%PORT%" br=%BAUDRATE% -w "' + firmware +'" -v -g\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO *** DONE ***'+'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO Cheers, and have fun.'+'\n')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n')
+    F.close()
+    os_system('mlrs_flasher_runner.bat', allow_neg_res=True)
+
+
+def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
+    res = os_system('apInitPassthru.py -findport', allow_neg_res=True)
+    comport = 'COM'+str(-res) #TODO: what for mac,lin ???
+    #print(res, comport)
+    res = os_system('apInitPassthru.py -findbaud -c "'+comport+'" -s '+str(serialx_no), allow_neg_res=True)
+    baudrate = int(-res)
+    #print(res, baudrate)
+    res = os_system('apInitPassthru.py -c "'+comport+'" -s '+str(serialx_no)+' -b '+str(baudrate))
+    #print('waiting for 5 secs...')
+    time.sleep(5.0)
+    flash_stm32cubeprogrammer('uart', firmware, comport=comport, baudrate=baudrate)
+      
+
 def flashSTM32CubeProgrammer(programmer, firmware):
+    #print('flashSTM32CubeProgrammer()',programmer)
+    serialx_no = None
+    f = re.search(r' serial([0-9]+?)', programmer.lower())
+    if f: 
+        serialx_no = f.group(1)
+        
     if os_system_run_as_bat():
         print('Run on Windows as batch file')
-        flash_stm32cubeprogrammer_win(programmer, firmware)
+        if 'appassthru' in programmer:
+            flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware)
+        else:
+            flash_stm32cubeprogrammer_win(programmer, firmware)
         return
-
-    flash_stm32cubeprogrammer(programmer, firmware)
+        
+    if 'appassthru' in programmer:
+        flash_stm32cubeprogrammer_appassthru(serialx_no, firmware)
+    else:
+        flash_stm32cubeprogrammer(programmer, firmware)
     print()
     print('*** DONE ***')
     print()
     print('Cheers, and have fun.')
+
+
+#flashSTM32CubeProgrammer('stm32 stlink', 'temp/rx-R9MX-l433cb-v1.3.05-@28fe6be0.hex')
+#flashSTM32CubeProgrammer('stm32 appassthru serial2', 'temp/rx-R9MX-l433cb-v1.3.05-@28fe6be0.hex')
+#exit(1)
 
 
 '''
@@ -211,13 +264,13 @@ def flash_esptool_win(programmer, firmware, comport, baudrate):
     esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
 
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO *** DONE ***'+'\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO Cheers, and have fun.'+'\n\r')
-###    F.write('@pause'+'\n\r')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n\r')
+    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO *** DONE ***'+'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO Cheers, and have fun.'+'\n')
+###    F.write('@pause'+'\n')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat')
 
@@ -272,21 +325,21 @@ def flash_internal_elrs_tx_module_win(firmware, wirelessbridge=False):
         passthru_args = '-b '+str(baudrate)
         esptool_args = flash_esptool_argstr('esp32', os.path.join(temp_path, firmware), 'COM%RADIOPORT%', baudrate)
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@edgetxInitPassthru.py ' + passthru_args +'\n\r')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n\r')
-    F.write('@if %ERRORLEVEL% LEQ 0 set /a RADIOPORT=-%ERRORLEVEL%'+'\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO *** 3. Flashing the internal Tx Module ***'+'\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO The firmware to flash is: '+firmware+'\n\r')
-    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO *** DONE ***'+'\n\r')
-    F.write('@ECHO.'+'\n\r')
-    F.write('@ECHO Please remove the USB cable.'+'\n\r')
-    F.write('@ECHO Cheers, and have fun.'+'\n\r')
-###    F.write('@pause'+'\n\r')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n\r')
+    F.write('@edgetxInitPassthru.py ' + passthru_args +'\n')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
+    F.write('@if %ERRORLEVEL% LEQ 0 set /a RADIOPORT=-%ERRORLEVEL%'+'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO *** 3. Flashing the internal Tx Module ***'+'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO The firmware to flash is: '+firmware+'\n')
+    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO *** DONE ***'+'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO Please remove the USB cable.'+'\n')
+    F.write('@ECHO Cheers, and have fun.'+'\n')
+###    F.write('@pause'+'\n')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat')
 
@@ -568,8 +621,7 @@ def getFileAndWriteToDisk(url, filename):
 
 # API for app
 def flashDevice(programmer, url, filename, comport=None, baudrate=None):
-    #print('flashDevice()')
-    #print(device)
+    #print('flashDevice()',programmer)
     #print(url)
     #print(filename)
     create_dir('temp')
@@ -889,9 +941,13 @@ class App(ctk.CTk):
             print('ERROR: flashReceiverFirmware() [1]')
             return
         #print(firmware_filename)
-        device_type_f = self.txDeviceTypeDict[device_type]['fname']
+        device_type_f = self.rxDeviceTypeDict[device_type]['fname']
         flashmethod, _, _ = self.get_metadata(device_type_f, firmware_filename)
         if not flashmethod: flashmethod = 'default' # can be None
+        if ',' in flashmethod: # the target allows several flashmethod, so we need to get the selected on
+            sel = self.fReceiver_Flashmethod_menu.get()
+            flashmethod = self.get_flashmethod_from_menu_opt(sel)
+            serialx = self.fReceiver_Serialx_menu.get().lower()
         #print('--->',flashmethod)
         chipset = self.rxDeviceTypeDict[device_type]['chipset']
         #print(chipset)
@@ -901,6 +957,8 @@ class App(ctk.CTk):
                 if 'stm32' in chipset:
                     if 'dfu' in flashmethod:
                         flashDevice('stm32 dfu', key['url'], firmware_filename)
+                    elif 'appassthru' in flashmethod:     
+                        flashDevice('stm32 appassthru '+serialx, key['url'], firmware_filename)
                     else:
                         flashDevice('stm32 stlink', key['url'], firmware_filename) # STLink is default
                     return
@@ -1047,6 +1105,22 @@ class App(ctk.CTk):
                             #    description = target_dict['wireless']['description']
                         break
         return flashmethod, description, wireless
+
+    def get_flashmethod_list_for_menu(self, flashmethod_str):
+        flashmethod_list = flashmethod_str.split(',')
+        menu_list = []
+        for flashmethod in flashmethod_list:
+            if flashmethod == 'dfu': menu_list.append('DFU (USB)')
+            if flashmethod == 'stlink': menu_list.append('STLink (SWD)')
+            if flashmethod == 'appassthru': menu_list.append('AP Passthru')
+        if len(menu_list) == 0: menu_list.append('failed')
+        return menu_list     
+            
+    def get_flashmethod_from_menu_opt(self, menu_opt):
+        if 'DFU' in menu_opt: return 'dfu'
+        if 'STLink' in menu_opt: return 'stlink'
+        if 'AP Passthru' in menu_opt: return 'appassthru'
+        return 'default'
 
 
     #--------------------------------------------------
@@ -1345,14 +1419,13 @@ class App(ctk.CTk):
         self.fReceiver = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.fReceiver.grid_columnconfigure(1, weight=1)
         self.fReceiver.grid_columnconfigure(2, weight=0)
-        self.fReceiver.grid_rowconfigure(4, weight=1)
+        self.fReceiver.grid_rowconfigure(5, weight=1)
 
         wrow = 0
 
         # Device Type
         self.fReceiver_DeviceType_label = ctk.CTkLabel(self.fReceiver,
-            text="Device Type",
-            )
+            text="Device Type")
         self.fReceiver_DeviceType_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fReceiver_DeviceType_menu = ctk.CTkOptionMenu(self.fReceiver,
             values=["downloading..."],
@@ -1363,8 +1436,7 @@ class App(ctk.CTk):
 
         # Firmware Version
         self.fReceiver_FirmwareVersion_label = ctk.CTkLabel(self.fReceiver,
-            text="Firmware Version",
-            )
+            text="Firmware Version")
         self.fReceiver_FirmwareVersion_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fReceiver_FirmwareVersion_menu = ctk.CTkOptionMenu(self.fReceiver,
             values=["downloading..."],
@@ -1375,8 +1447,7 @@ class App(ctk.CTk):
 
         # Firmware File
         self.fReceiver_FirmwareFile_label = ctk.CTkLabel(self.fReceiver,
-            text="Firmware File",
-            )
+            text="Firmware File")
         self.fReceiver_FirmwareFile_label.grid(row=wrow, column=0, padx=20, pady=20)
         self.fReceiver_FirmwareFile_menu = ctk.CTkOptionMenu(self.fReceiver,
             values=["downloading..."],
@@ -1392,6 +1463,29 @@ class App(ctk.CTk):
         self.fReceiver_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
         
+        # Flash Method Frame
+        self.fReceiver_Flashmethod_label = ctk.CTkLabel(self.fReceiver,
+            text="Flash Method")
+        self.fReceiver_Flashmethod_label.grid(row=wrow, column=0, padx=20, pady=20)
+        self.fReceiver_fFlashMethod = ctk.CTkFrame(self.fReceiver, corner_radius=0, fg_color="transparent")
+        self.fReceiver_fFlashMethod.grid(row=wrow, column=1, padx=(0,20), sticky="w")
+        wrow += 1
+        
+        self.fReceiver_Flashmethod_menu = ctk.CTkOptionMenu(self.fReceiver_fFlashMethod,
+            #values=["-"],
+            width=120,
+            command=self.fReceiver_Flashmethod_menu_event)
+        self.fReceiver_Flashmethod_menu.grid(row=0, column=0, padx=0, sticky="w")
+        self.fReceiver_Serialx_menu = ctk.CTkOptionMenu(self.fReceiver_fFlashMethod,
+            values=['SERIAL1','SERIAL2','SERIAL3','SERIAL4','SERIAL5','SERIAL6','SERIAL7','SERIAL8'],
+            width=120,
+            )#command=self.fReceiver_Serialx_menu_event)
+        self.fReceiver_Serialx_menu.grid(row=0, column=1, padx=20)
+        
+        #self.fReceiver_Flashmethod_label.grid_remove()
+        #self.fReceiver_fFlashMethod.grid_remove()
+        #self.fReceiver_Serialx_menu.grid_remove()
+        
         #-- Description text box --
         self.fReceiver_Description_textbox = CTkInfoTextbox(self.fReceiver,
             #height=100,
@@ -1400,18 +1494,43 @@ class App(ctk.CTk):
         self.fReceiver_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
         wrow += 1
 
-        self.fReceiver_Description_textbox.grid_remove()
+        #self.fReceiver_Description_textbox.grid_remove()
 
     def fReceiver_UpdateWidgets(self):
         device_type = self.fReceiver_DeviceType_menu.get()
         firmware_filename = self.fReceiver_FirmwareFile_menu.get()
         device_type_f = self.rxDeviceTypeDict[device_type]['fname']
-        _, description, _ = self.get_metadata(device_type_f, firmware_filename)
-        if description != None:
+        flashmethod, description, _ = self.get_metadata(device_type_f, firmware_filename)
+        if description == None:
+            self.fReceiver_Description_textbox.grid_remove()
+        else:
             self.fReceiver_Description_textbox.grid()
             self.fReceiver_Description_textbox.setText(description)
+        #flashmethod = 'stlink'
+        #flashmethod = 'stlink,appassthru'
+        #print(flashmethod)
+        if flashmethod == None or ',' not in flashmethod:
+            self.fReceiver_Flashmethod_label.grid_remove()
+            self.fReceiver_fFlashMethod.grid_remove()
         else:
-            self.fReceiver_Description_textbox.grid_remove()
+            self.fReceiver_Flashmethod_label.grid()
+            self.fReceiver_fFlashMethod.grid()
+            #if 'appassthru' in flashmethod:
+            #    self.fReceiver_Serialx_menu.grid()
+            #else:    
+            #    self.fReceiver_Serialx_menu.grid_remove()
+            menu_list = self.get_flashmethod_list_for_menu(flashmethod)
+            self.fReceiver_Flashmethod_menu.configure(values=menu_list)
+            self.fReceiver_Flashmethod_menu.set(menu_list[0])
+            self.fReceiver_UpdateSerialxMenu()
+            
+    def fReceiver_UpdateSerialxMenu(self):
+            sel = self.fReceiver_Flashmethod_menu.get()
+            sel_flashmethod = self.get_flashmethod_from_menu_opt(sel)
+            if sel_flashmethod == 'appassthru':
+                self.fReceiver_Serialx_menu.grid()
+            else:    
+                self.fReceiver_Serialx_menu.grid_remove()
 
     def fReceiver_Startup(self):
         self.updateReceiverFirmwareFiles()
@@ -1430,6 +1549,9 @@ class App(ctk.CTk):
 
     def fReceiver_Flash_button_event(self):
         self.flashReceiverFirmware()
+        
+    def fReceiver_Flashmethod_menu_event(self, opt):
+        self.fReceiver_UpdateSerialxMenu()
 
 
     #--------------------------------------------------

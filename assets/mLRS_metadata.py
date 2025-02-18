@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-#*******************************************************
+#************************************************************
 # Copyright (c) MLRS project
 # GPL3
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 # OlliW @ www.olliw.eu
-#*******************************************************
+#************************************************************
 # mLRS Meta Data for mLRS Flahser Desktop App
-# 14. Feb. 2025 001
-#********************************************************
+# 18. Feb. 2025 001
+#************************************************************
 
 
 # this is easy enough to maintain by hand for the moment
@@ -72,7 +72,7 @@ g_targetDict = {
             "\nWireless bridge: HC04, cannot be flashed\n",
     },
     'tx-R9' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.",
+        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
     },
     'tx-E77-MBLKit' : {
         'flashmethod' : 'stlink',
@@ -87,7 +87,7 @@ g_targetDict = {
         'description' : description_stm32_stlink_default,
     },
     'tx-FRM303' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.",
+        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
     },
 
     # esp32 tx module defaults
@@ -124,7 +124,7 @@ g_targetDict = {
             },
         },
         'tx-radiomaster-rp4td' : {
-            'description' : "No description yet. Please see docs for details.",
+            'description' : "No description yet. Please see docs for details.\n",
         },
     },
 
@@ -179,7 +179,13 @@ g_targetDict = {
         },
     },
     'rx-R9' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.",
+        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
+        'rx-R9MX-l433cb': {
+            'flashmethod' : 'stlink,appassthru',
+            'description' : 
+                description_stm32_stlink_default + 
+                "In addition flashing via ArduPilot passthrough is supported.\n",
+        }
     },
     'rx-E77-MBLKit' : {
         'flashmethod' : 'stlink',
@@ -194,7 +200,7 @@ g_targetDict = {
         'description' : description_stm32_stlink_default,
     },
     'rx-FRM303' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.",
+        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
     },
 
     # esp defaults:

@@ -19,11 +19,13 @@ a = Analysis(
     datas=[
         (path + 'assets' , 'assets'),
         (path + 'thirdparty/esptool' , 'thirdparty/esptool'),
+        (path + 'thirdparty/mavlink' , 'thirdparty/mavlink'),
         (path + 'edgetxInitPassthru.py' , '.'),
+        (path + 'apInitPassthru.py' , '.'),
         (path + 'thirdparty/STM32CubeProgrammer/win' , 'thirdparty/STM32CubeProgrammer/win'),
-		# important: pyinstaller ssems to not be able to inlcude CustomTkInter
-		# https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
-		('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter')
+        # important: pyinstaller ssems to not be able to include CustomTkInter
+        # https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
+        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter')
         ],
     hiddenimports=[
         'pyserial', # it seems pyinstaller cannot handle the fact that the module is pyserial butthe import is serial

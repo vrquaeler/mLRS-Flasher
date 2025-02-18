@@ -1,21 +1,20 @@
 #!/usr/bin/env python
-#*******************************************************
+#************************************************************
 # Copyright (c) MLRS project
 # GPL3
 # https://www.gnu.org/licenses/gpl-3.0.de.html
-#*******************************************************
+#************************************************************
+# Open passthrough to internal Tx module of EdgeTx/OpenTx radios
 # 15. Feb. 2025
-#********************************************************
+#************************************************************
 
 import os, sys, time
 import serial, argparse
 
 
-'''
---------------------------------------------------
-Internal Tx Module Flashing Tools
---------------------------------------------------
-'''
+#--------------------------------------------------
+#-- Internal Tx Module Flashing Tools
+#--------------------------------------------------
 
 def find_radio_serial_ports():
     '''
@@ -71,19 +70,28 @@ def execute_cli_command(ser, cmd, expected=None, timeout=1.0):
     return res
 
 
-def open_passthrough(baudrate = 115200, wirelessbridge = None):
-    print()
-    print('*** 1. Finding COM port of your radio ***')
-    print()
-
+def find_radioport():
     radioports_list = find_radio_serial_ports()
     if len(radioports_list) != 1:
-        do_msg('Please power up your radio, connect the USB, and select "USB Serial (VCP)".')
+        do_msg("Please power up your radio, connect the USB, and select 'USB Serial (VCP)'.")
         radioports_list = find_radio_serial_ports()
         if len(radioports_list) != 1:
             do_error('Sorry, something went wrong and we could not find the com port of your radio.')
     radioport = radioports_list[0]
     print('Your radio is on com port', radioport)
+    return radioport
+
+
+def open_passthrough(comport = None, baudrate = 115200, wirelessbridge = None):
+    print()
+    print('*** 1. Finding COM port of your radio ***')
+    print()
+
+    if comport:
+        radioport = comport
+        print('Your radio is on com port', radioport)
+    else:    
+        radioport = find_radioport()
 
     try:
         s = serial.Serial(radioport)
@@ -154,12 +162,39 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description = 'Initialize EdgeTX/OpenTx passthrough to internal Tx module'
         )
+    parser.add_argument("-c", "--com", help="Com port for passthrough communication. Examples: com5, /dev/ttyACM0")
     parser.add_argument("-b", "--baud", type=int, default=115200, help = 'Baudrate for passthrough communication')
     parser.add_argument("-w", "--wirelessbridge", action='store_true', help = 'Wirelessbridge passthrough')
+    parser.add_argument("-findport", action='store_true', help = 'Find port')
     args = parser.parse_args()
 
-    radioport = open_passthrough(baudrate = args.baud, wirelessbridge = args.wirelessbridge)
-    
-    if os.name != 'posix': # windows
-        exit(-int(radioport[3:]))
+    if args.findport:
+        radioport = mlrs_find_apport()
+        sys.exit(-int(radioport[3:])) # report back com port, for use in batch file
 
+    radioport = open_passthrough(comport = args.com, baudrate = args.baud, wirelessbridge = args.wirelessbridge)
+    
+    sys.exit(-int(radioport[3:]))
+
+
+
+'''
+example usage in batch file
+
+@edgetxInitPassthru.py passthru_args
+@if %ERRORLEVEL% GEQ 1 EXIT /B 1
+@if %ERRORLEVEL% LEQ 0 set /a RADIOPORT=-%ERRORLEVEL%
+@ECHO.
+@ECHO *** 3. Flashing the internal Tx Module ***
+@ECHO.
+@ECHO The firmware to flash is: firmware
+@thirdparty/esptool/esptool.py esptool_args
+@ECHO.
+@ECHO *** DONE ***
+@ECHO.
+@ECHO Please remove the USB cable.
+@ECHO Cheers, and have fun.
+###    F.write('@pause'+'\n')
+   if os_system_is_frozen_app(): F.write('@pause'+'\n')
+
+'''
