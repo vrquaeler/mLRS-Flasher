@@ -48,7 +48,7 @@ def os_system(arg, allow_neg_res=False):
         print('# ERROR (errno =',res,') DONE #')
         os.system("pause")
         sys.exit(1)
-    return res    
+    return res
 
 def os_system_run_as_bat():
     #return False
@@ -85,7 +85,7 @@ def flash_stm32cubeprogrammer_argstr(programmer, firmware, comport=None, baudrat
         args = ' -c port="'+comport+'" br='+str(baudrate)+' -w "' + firmware +'" -v -g'
     else:
         args = '-c port=SWD freq=3900 -w "'+firmware+'" -v -g'
-    return args    
+    return args
 
 
 def flash_stm32cubeprogrammer_win(programmer, firmware):
@@ -147,15 +147,15 @@ def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
     #print('waiting for 5 secs...')
     time.sleep(5.0)
     flash_stm32cubeprogrammer('uart', firmware, comport=comport, baudrate=baudrate)
-      
+
 
 def flashSTM32CubeProgrammer(programmer, firmware):
     #print('flashSTM32CubeProgrammer()',programmer)
     serialx_no = None
     f = re.search(r' serial([0-9]+?)', programmer.lower())
-    if f: 
+    if f:
         serialx_no = f.group(1)
-        
+
     if os_system_run_as_bat():
         print('Run on Windows as batch file')
         if 'appassthru' in programmer:
@@ -163,7 +163,7 @@ def flashSTM32CubeProgrammer(programmer, firmware):
         else:
             flash_stm32cubeprogrammer_win(programmer, firmware)
         return
-        
+
     if 'appassthru' in programmer:
         flash_stm32cubeprogrammer_appassthru(serialx_no, firmware)
     else:
@@ -361,7 +361,7 @@ def flashInternalElrsTxModule(programmer, firmware):
     #print(programmer)
     baudrate = 921600
     radioport = radio.open_passthrough(baudrate)
-    
+
     print()
     print('*** 3. Flashing the internal Tx Module ***')
     print()
@@ -387,7 +387,7 @@ def flashInternalElrsTxModuleWirelessBridge(programmer, firmware):
     #print(programmer)
     baudrate = 115200
     radioport = radio.open_passthrough(baudrate, wirelessbridge = True)
-    
+
     print()
     print('*** 3. Flashing the wireless bridge of the internal Tx Module ***')
     print()
@@ -903,7 +903,7 @@ class App(ctk.CTk):
                     flashDevice(chipset, key['url'], firmware_filename, comport=comport, baudrate=921600)
                     return
         print('ERROR: flashTxModuleExternalFirmware() [2]')
-        
+
     def flashTxModuleExternalWirelessBridgeFirmware(self):
         #print('flashTxModuleExternalWirelessBridgeFirmware()')
         comport = self.fTxModuleExternal_ComPort_menu.get()
@@ -927,7 +927,7 @@ class App(ctk.CTk):
             programmer = programmer + ' dtr'
         if 'baud' in wireless:
             baudrate = wireless['baud']
-        else:    
+        else:
             baudrate = 921600
         url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
         firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
@@ -957,7 +957,7 @@ class App(ctk.CTk):
                 if 'stm32' in chipset:
                     if 'dfu' in flashmethod:
                         flashDevice('stm32 dfu', key['url'], firmware_filename)
-                    elif 'appassthru' in flashmethod:     
+                    elif 'appassthru' in flashmethod:
                         flashDevice('stm32 appassthru '+serialx, key['url'], firmware_filename)
                     else:
                         flashDevice('stm32 stlink', key['url'], firmware_filename) # STLink is default
@@ -1114,8 +1114,8 @@ class App(ctk.CTk):
             if flashmethod == 'stlink': menu_list.append('STLink (SWD)')
             if flashmethod == 'appassthru': menu_list.append('AP Passthru')
         if len(menu_list) == 0: menu_list.append('failed')
-        return menu_list     
-            
+        return menu_list
+
     def get_flashmethod_from_menu_opt(self, menu_opt):
         if 'DFU' in menu_opt: return 'dfu'
         if 'STLink' in menu_opt: return 'stlink'
@@ -1356,7 +1356,7 @@ class App(ctk.CTk):
             )
         self.fTxModuleExternal_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
         wrow += 1
-        
+
         self.fTxModuleExternal_fWirelessBridge.grid_remove() # pack_forget() did not work!
         self.fTxModuleExternal_Description_textbox.grid_remove()
 
@@ -1462,7 +1462,7 @@ class App(ctk.CTk):
             command = self.fReceiver_Flash_button_event)
         self.fReceiver_Flash_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
-        
+
         # Flash Method Frame
         self.fReceiver_Flashmethod_label = ctk.CTkLabel(self.fReceiver,
             text="Flash Method")
@@ -1470,7 +1470,7 @@ class App(ctk.CTk):
         self.fReceiver_fFlashMethod = ctk.CTkFrame(self.fReceiver, corner_radius=0, fg_color="transparent")
         self.fReceiver_fFlashMethod.grid(row=wrow, column=1, padx=(0,20), sticky="w")
         wrow += 1
-        
+
         self.fReceiver_Flashmethod_menu = ctk.CTkOptionMenu(self.fReceiver_fFlashMethod,
             #values=["-"],
             width=120,
@@ -1481,11 +1481,11 @@ class App(ctk.CTk):
             width=120,
             )#command=self.fReceiver_Serialx_menu_event)
         self.fReceiver_Serialx_menu.grid(row=0, column=1, padx=20)
-        
+
         #self.fReceiver_Flashmethod_label.grid_remove()
         #self.fReceiver_fFlashMethod.grid_remove()
         #self.fReceiver_Serialx_menu.grid_remove()
-        
+
         #-- Description text box --
         self.fReceiver_Description_textbox = CTkInfoTextbox(self.fReceiver,
             #height=100,
@@ -1517,19 +1517,19 @@ class App(ctk.CTk):
             self.fReceiver_fFlashMethod.grid()
             #if 'appassthru' in flashmethod:
             #    self.fReceiver_Serialx_menu.grid()
-            #else:    
+            #else:
             #    self.fReceiver_Serialx_menu.grid_remove()
             menu_list = self.get_flashmethod_list_for_menu(flashmethod)
             self.fReceiver_Flashmethod_menu.configure(values=menu_list)
             self.fReceiver_Flashmethod_menu.set(menu_list[0])
             self.fReceiver_UpdateSerialxMenu()
-            
+
     def fReceiver_UpdateSerialxMenu(self):
             sel = self.fReceiver_Flashmethod_menu.get()
             sel_flashmethod = self.get_flashmethod_from_menu_opt(sel)
             if sel_flashmethod == 'appassthru':
                 self.fReceiver_Serialx_menu.grid()
-            else:    
+            else:
                 self.fReceiver_Serialx_menu.grid_remove()
 
     def fReceiver_Startup(self):
@@ -1549,7 +1549,7 @@ class App(ctk.CTk):
 
     def fReceiver_Flash_button_event(self):
         self.flashReceiverFirmware()
-        
+
     def fReceiver_Flashmethod_menu_event(self, opt):
         self.fReceiver_UpdateSerialxMenu()
 
@@ -1631,7 +1631,7 @@ class App(ctk.CTk):
             )
         self.fTxModuleInternal_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
         wrow += 1
-        
+
         self.fTxModuleInternal_fWirelessBridge.grid_remove() # pack_forget() did not work!
         self.fTxModuleInternal_Description_textbox.grid_remove()
 
