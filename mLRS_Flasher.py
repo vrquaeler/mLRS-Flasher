@@ -736,7 +736,7 @@ class App(ctk.CTk):
         self.firmwareVersionDict = downloadVersionsDict()
         if self.firmwareVersionDict:
             keys = []
-            for key in list(self.firmwareVersionDict.keys()):
+            for key in list(self.firmwareVersionDict.keys()): # we assume here it cannot be empty
                 keys.append(self.firmwareVersionDict[key]['versionStr'])
         else:
             self.firmwareVersionDict = None
@@ -760,7 +760,8 @@ class App(ctk.CTk):
         self.fTxModuleInternal_FirmwareVersion_menu.set(txintkeys[0])
         self.fLuaScript_FirmwareVersion_menu.configure(values=luakeys)
         self.fLuaScript_FirmwareVersion_menu.set(luakeys[0])
-        return self.firmwareVersionDict != None
+        #return self.firmwareVersionDict != None
+        return 'failed' not in keys[0]
 
     # helper
     def _download_firmware_files(self, device_type, firmware_version, txorrxortxint):
@@ -815,7 +816,7 @@ class App(ctk.CTk):
         keys = self._download_firmware_files(device_type, firmware_version, 'tx')
         self.fTxModuleExternal_FirmwareFile_menu.configure(values=keys)
         self.fTxModuleExternal_FirmwareFile_menu.set(keys[0])
-        return 'failed' not in keys
+        return 'failed' not in keys[0]
 
     # needs to be called whenever device type or firmware version changes
     # calls _download_firmware_files() to get the 'rx' file names in the tree, and updates Receiver 'Firmware Files' widget
@@ -825,7 +826,7 @@ class App(ctk.CTk):
         keys = self._download_firmware_files(device_type, firmware_version, 'rx')
         self.fReceiver_FirmwareFile_menu.configure(values=keys)
         self.fReceiver_FirmwareFile_menu.set(keys[0])
-        return 'failed' not in keys
+        return 'failed' not in keys[0]
 
     # needs to be called whenever device type or firmware version changes
     # calls _download_firmware_files() to get the 'tx int' file names in the tree, and updates TxModuleInternal 'Firmware Files' widget
@@ -835,7 +836,7 @@ class App(ctk.CTk):
         keys = self._download_firmware_files(device_type, firmware_version, 'tx int')
         self.fTxModuleInternal_FirmwareFile_menu.configure(values=keys)
         self.fTxModuleInternal_FirmwareFile_menu.set(keys[0])
-        return 'failed' not in keys
+        return 'failed' not in keys[0]
 
     # helper
     def _download_luascript_files(self, firmware_version):
@@ -1037,12 +1038,12 @@ class App(ctk.CTk):
         
     def after_startup(self):
         print('downloading metadata from github repository...')
-        res = self.updateFirmwareVersions()
-        res = res and self.fTxModuleExternal_Startup()
-        res = res and self.fReceiver_Startup()
-        res = res and self.fTxModuleInternal_Startup()
-        res = res and self.fLuaScript_Startup()
-        if res: print('... ok')
+        res1 = self.updateFirmwareVersions()
+        res2 = self.fTxModuleExternal_Startup()
+        res3 = self.fReceiver_Startup()
+        res4 = self.fTxModuleInternal_Startup()
+        res5 = self.fLuaScript_Startup()
+        if (res1 and res2 and res3 and res4 and res5): print('... ok')
 
     def ini_open(self):
         self.ini_config = configparser.ConfigParser()
