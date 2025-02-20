@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 18. Feb. 2025 001
+# 20. Feb. 2025 001
 #************************************************************
-app_version = '18.02.2025-001'
+app_version = '20.02.2025-001'
 
 import os, sys, time
 import subprocess
@@ -417,6 +417,7 @@ g_LuaScript_minimal_version = 'v1.3.00'
 
 
 def requestJsonDict(url, error_msg=''):
+    res = None
     try:
         res = requests.get(url, allow_redirects=True)
         if b'API rate limit exceeded' in res.content:
@@ -426,7 +427,7 @@ def requestJsonDict(url, error_msg=''):
             return False
         jsonDict = res.json()
     except:
-        print(res.content)
+        if res: print(res.content)
         print(error_msg)
         return None
     return jsonDict
@@ -458,21 +459,11 @@ def requestData(url, error_msg=''):
 
 
 # API for app
-def getDevicesDict(txorrxortxint):
-    if txorrxortxint == 'tx':
-        return mlrs_md.g_txModuleExternalDeviceTypeDict
-    if txorrxortxint == 'tx int':
-        return mlrs_md.g_txModuleInternalDeviceTypeDict
-    else:
-        return mlrs_md.g_receiverDeviceTypeDict
-
-
-# API for app
-def getVersionsDict():
+def downloadVersionsDict():
     # download mlrs_firmware_urls.json
     # it holds the "released" versions, i.e., all non-dev versions
     url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/tools/web/mlrs_firmware_urls.json'
-    res = requestJsonDict(url, 'ERROR: getVersionsDict() [1]')
+    res = requestJsonDict(url, 'ERROR: downloadVersionsDict() [1]')
     if not res:
         return res
     resDict = res
@@ -497,7 +488,7 @@ def getVersionsDict():
     # We need to read the main json, to get the current firmware folder url,
     # then read one file name in this folder, and extract the version part from the file name
     url_main = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
-    res = requestJsonDict(url_main, 'ERROR: getVersionsDict() [2]')
+    res = requestJsonDict(url_main, 'ERROR: downloadVersionsDict() [2]')
     if not res:
         return res
     resMainList = res['tree'] # it's a list of dictionaries
@@ -513,7 +504,7 @@ def getVersionsDict():
     #print(firmwarePathDict)
 
     url_main_firmware = key['url'] + '?recursive=true' # not so many, so we can afford getting them all
-    res = requestJsonDict(url_main_firmware, 'ERROR: getVersionsDict() [2]')
+    res = requestJsonDict(url_main_firmware, 'ERROR: downloadVersionsDict() [2]')
     if not res:
         return res
     resMainFirmwareList = res['tree'] # it's a list of dictionaries
@@ -545,8 +536,8 @@ def getVersionsDict():
 # Get files list from github repo, for a specifc tree, and filter according to what we want.
 # pass in a GitHub tree URL like https://api.github.com/repos/olliw42/mLRS/git/trees/f12d680?recursive=true
 # this is needed to get the list of files from the location which is specific to the version
-def getFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
-    res = requestJsonDict(url, 'ERROR: getFilesListFromTree()')
+def downloadFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
+    res = requestJsonDict(url, 'ERROR: downloadFilesListFromTree()')
     if not res:
         return None
     resList = res['tree'] # it's a list of dictionaries
@@ -559,7 +550,7 @@ def getFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
             elif '.lua' not in key['path']: # only accept files with '.lua' extension
                 resList.remove(key)
     elif txorrxortxintorlua == 'tx int': # 'tx int'
-        if device == '' or version == '': print('ERROR: getFilesListFromTree() [2]')
+        if device == '' or version == '': print('ERROR: downloadFilesListFromTree() [2]')
         #print(url, device, version)
         #print(resList)
         for key in resList[:]: # creates a copy of the list, so we can easily remove
@@ -578,7 +569,7 @@ def getFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
             elif device not in key['path']: # only accept tx-device-internal
                 resList.remove(key)
     else: # 'tx' or 'rx'
-        if device == '' or version == '': print('ERROR: getFilesListFromTree() [2]')
+        if device == '' or version == '': print('ERROR: downloadFilesListFromTree() [2]')
         #print(url, device, version)
         #print(resList)
         for key in resList[:]: # creates a copy of the list, so we can easily remove
@@ -609,10 +600,10 @@ def getFilesListFromTree(txorrxortxintorlua, url, device='', version=''):
     return resList
 
 
-def getFileAndWriteToDisk(url, filename):
+def downloadFileAndWriteToDisk(url, filename):
     #url = 'https://api.github.com/repos/olliw42/mLRS/git/blobs/9cfb92d2de3f0582b6b33279abecd941885681d4'
     #filename = 'rx-matek-mr24-30-g431kb-can-v1.3.04.hex'
-    data = requestData(url, 'ERROR: getFileAndWriteToDisk()')
+    data = requestData(url, 'ERROR: downloadFileAndWriteToDisk()')
     F = open(filename, 'wb')
     F.write(data)
     F.close()
@@ -625,7 +616,7 @@ def flashDevice(programmer, url, filename, comport=None, baudrate=None):
     #print(url)
     #print(filename)
     create_dir('temp')
-    res = getFileAndWriteToDisk(url, os.path.join('temp',filename))
+    res = downloadFileAndWriteToDisk(url, os.path.join('temp',filename))
     if not res:
         print('ERROR: flashDevice() [1]')
         return
@@ -724,25 +715,25 @@ class App(ctk.CTk):
     # needs to be called only once at startup
     # calls getDevicesDict(), and updates the 'Device Type' widgets accordingly
     def updateDeviceTypes(self):
-        self.txDeviceTypeDict = getDevicesDict('tx')
+        self.txDeviceTypeDict = mlrs_md.g_txModuleExternalDeviceTypeDict
         keys = list(self.txDeviceTypeDict.keys())
         self.fTxModuleExternal_DeviceType_menu.configure(values=keys)
         self.fTxModuleExternal_DeviceType_menu.set(keys[0]) # this is needed to make the menu update itself
 
-        self.rxDeviceTypeDict = getDevicesDict('rx')
+        self.rxDeviceTypeDict = mlrs_md.g_receiverDeviceTypeDict
         keys = list(self.rxDeviceTypeDict.keys())
         self.fReceiver_DeviceType_menu.configure(values=keys)
         self.fReceiver_DeviceType_menu.set(keys[0])
 
-        self.txIntDeviceTypeDict = getDevicesDict('tx int')
+        self.txIntDeviceTypeDict = mlrs_md.g_txModuleInternalDeviceTypeDict
         keys = list(self.txIntDeviceTypeDict.keys())
         self.fTxModuleInternal_DeviceType_menu.configure(values=keys)
         self.fTxModuleInternal_DeviceType_menu.set(keys[0])
 
     # needs to be called only once at startup
-    # calls getVersionsDict(), and updates the Firmware Version' widgets accordingly
+    # calls downloadVersionsDict(), and updates the Firmware Version' widgets accordingly
     def updateFirmwareVersions(self):
-        self.firmwareVersionDict = getVersionsDict()
+        self.firmwareVersionDict = downloadVersionsDict()
         if self.firmwareVersionDict:
             keys = []
             for key in list(self.firmwareVersionDict.keys()):
@@ -769,6 +760,7 @@ class App(ctk.CTk):
         self.fTxModuleInternal_FirmwareVersion_menu.set(txintkeys[0])
         self.fLuaScript_FirmwareVersion_menu.configure(values=luakeys)
         self.fLuaScript_FirmwareVersion_menu.set(luakeys[0])
+        return self.firmwareVersionDict != None
 
     # helper
     def _download_firmware_files(self, device_type, firmware_version, txorrxortxint):
@@ -787,7 +779,7 @@ class App(ctk.CTk):
         firmware_version_gitUrl = self.firmwareVersionDict[firmware_version]['gitUrl']
         #print(device_type, device_type_f)
         #print(firmware_version, firmware_version_gitUrl)
-        res = getFilesListFromTree(txorrxortxint, firmware_version_gitUrl, device_type_f, firmware_version)
+        res = downloadFilesListFromTree(txorrxortxint, firmware_version_gitUrl, device_type_f, firmware_version)
         if res == None:
             print('ERROR: _download_firmware_files() [1]')
             return ['download failed...']
@@ -823,6 +815,7 @@ class App(ctk.CTk):
         keys = self._download_firmware_files(device_type, firmware_version, 'tx')
         self.fTxModuleExternal_FirmwareFile_menu.configure(values=keys)
         self.fTxModuleExternal_FirmwareFile_menu.set(keys[0])
+        return 'failed' not in keys
 
     # needs to be called whenever device type or firmware version changes
     # calls _download_firmware_files() to get the 'rx' file names in the tree, and updates Receiver 'Firmware Files' widget
@@ -832,6 +825,7 @@ class App(ctk.CTk):
         keys = self._download_firmware_files(device_type, firmware_version, 'rx')
         self.fReceiver_FirmwareFile_menu.configure(values=keys)
         self.fReceiver_FirmwareFile_menu.set(keys[0])
+        return 'failed' not in keys
 
     # needs to be called whenever device type or firmware version changes
     # calls _download_firmware_files() to get the 'tx int' file names in the tree, and updates TxModuleInternal 'Firmware Files' widget
@@ -841,6 +835,7 @@ class App(ctk.CTk):
         keys = self._download_firmware_files(device_type, firmware_version, 'tx int')
         self.fTxModuleInternal_FirmwareFile_menu.configure(values=keys)
         self.fTxModuleInternal_FirmwareFile_menu.set(keys[0])
+        return 'failed' not in keys
 
     # helper
     def _download_luascript_files(self, firmware_version):
@@ -848,7 +843,7 @@ class App(ctk.CTk):
             return ['download failed...']
         firmware_version_gitUrl = self.firmwareVersionDict[firmware_version]['gitUrl']
         #print(firmware_version, firmware_version_gitUrl)
-        self.luaScriptFilesList = getFilesListFromTree('lua', firmware_version_gitUrl) # must be self as list is needed later also
+        self.luaScriptFilesList = downloadFilesListFromTree('lua', firmware_version_gitUrl) # must be self as list is needed later also
         #print(self.luaScriptFilesList)
         if self.luaScriptFilesList == None:
             return ['download failed...']
@@ -871,6 +866,7 @@ class App(ctk.CTk):
         keys = self._download_luascript_files(firmware_version)
         self.fLuaScript_RadioScreen_menu.configure(values=keys)
         self.fLuaScript_RadioScreen_menu.set(keys[0])
+        return 'failed' not in keys
 
 
     # calls flashDevice() for the selected device, firmware url, and filename, to initiate flashing
@@ -982,7 +978,7 @@ class App(ctk.CTk):
         flashDevice('wirelessbridge internal esp8285', url, firmware_filename)
 
 
-    # calls getFileAndWriteToDisk() for the selected filename, and saves it
+    # calls downloadFileAndWriteToDisk() for the selected filename, and saves it
     def saveLuaScript(self, filename):
         #print(filename)
         # hä, what was this good for ??
@@ -998,7 +994,7 @@ class App(ctk.CTk):
         for key in self.luaScriptFilesList        :
             fpath, fname = os.path.split(key['path'])
             if fname.lower() in filename.lower():
-                getFileAndWriteToDisk(key['url'], filename)
+                downloadFileAndWriteToDisk(key['url'], filename)
                 return
         print('ERROR: saveLuaScript() [2]')
 
@@ -1034,16 +1030,19 @@ class App(ctk.CTk):
         self.startup()
 
         self.ini_open()
-
+        
     def startup(self):
         # these are 'static' and equal for each section
         self.updateDeviceTypes()
-        self.updateFirmwareVersions()
-
-        self.fTxModuleExternal_Startup()
-        self.fReceiver_Startup()
-        self.fTxModuleInternal_Startup()
-        self.updateLuaScriptFiles()
+        
+    def after_startup(self):
+        print('downloading metadata from github repository...')
+        res = self.updateFirmwareVersions()
+        res = res and self.fTxModuleExternal_Startup()
+        res = res and self.fReceiver_Startup()
+        res = res and self.fTxModuleInternal_Startup()
+        res = res and self.fLuaScript_Startup()
+        if res: print('... ok')
 
     def ini_open(self):
         self.ini_config = configparser.ConfigParser()
@@ -1385,9 +1384,10 @@ class App(ctk.CTk):
             self.fTxModuleExternal_Description_textbox.grid_remove()
 
     def fTxModuleExternal_Startup(self):
-        self.updateTxModuleExternalFirmwareFiles()
+        res = self.updateTxModuleExternalFirmwareFiles()
         self.fTxModuleExternal_ComPort_HandleIt()
         self.fTxModuleExternal_UpdateWidgets()
+        return res
 
     def fTxModuleExternal_DeviceType_menu_event(self, opt):
         self.updateTxModuleExternalFirmwareFiles()
@@ -1533,8 +1533,9 @@ class App(ctk.CTk):
                 self.fReceiver_Serialx_menu.grid_remove()
 
     def fReceiver_Startup(self):
-        self.updateReceiverFirmwareFiles()
+        res = self.updateReceiverFirmwareFiles()
         self.fReceiver_UpdateWidgets()
+        return res
 
     def fReceiver_DeviceType_menu_event(self, opt):
         self.updateReceiverFirmwareFiles()
@@ -1651,8 +1652,9 @@ class App(ctk.CTk):
             self.fTxModuleInternal_Description_textbox.grid_remove()
 
     def fTxModuleInternal_Startup(self):
-        self.updateTxModuleInternalFirmwareFiles()
+        res = self.updateTxModuleInternalFirmwareFiles()
         self.fTxModuleInternal_UpdateWidgets()
+        return res
 
     def fTxModuleInternal_DeviceType_menu_event(self, opt):
         self.updateTxModuleInternalFirmwareFiles()
@@ -1713,6 +1715,9 @@ class App(ctk.CTk):
         self.fLuaScript_Download_button.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20)
         wrow += 1
 
+    def fLuaScript_Startup(self):
+        return self.updateLuaScriptFiles()
+
     def fLuaScript_FirmwareVersion_menu_event(self, opt):
         self.updateLuaScriptFiles()
 
@@ -1744,5 +1749,7 @@ class App(ctk.CTk):
 
 if __name__ == "__main__":
     app = App()
+    app.update()
+    app.after(10,app.after_startup())
     app.mainloop()
     app.closed()
