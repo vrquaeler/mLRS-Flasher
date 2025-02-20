@@ -93,6 +93,7 @@ g_targetDict = {
     # esp32 tx module defaults
     # - 'flashmethod' : esptool with 'esp32'
     'tx-betafpv' : {
+        'description' : "Not available (download failed)\n",
         'tx-betafpv-micro-1w-2400' : {
             'description' :
                 "Flash method: connect to USB (select COM port)\n" +
@@ -109,6 +110,7 @@ g_targetDict = {
         },
     },
     'tx-radiomaster' : {
+        'description' : "Not available (download failed)\n",
         'tx-radiomaster-bandit' : {
             'description' :
                 "Flash method: connect to USB (select COM port)\n" +
