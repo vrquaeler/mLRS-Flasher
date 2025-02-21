@@ -33,6 +33,10 @@ g_receiverDeviceTypeDict = {
     'E77 MBL Kit' :    { 'fname' : 'rx-E77-MBLKit',  'chipset' : 'stm32' },
     'Easysolder' :     { 'fname' : 'rx-easysolder',  'chipset' : 'stm32' },
     'FlySky FRM 303' : { 'fname' : 'rx-FRM303',      'chipset' : 'stm32' },
+    'RadioMaster' :    { 'fname' : 'rx-radiomaster', 'chipset' : 'espxx' }, #esp8285, esp32, esp32c3
+    'BetaFPV' :        { 'fname' : 'rx-betafpv',     'chipset' : 'esp32' },
+    'Bayck' :          { 'fname' : 'rx-bayck',       'chipset' : 'esp8285' },
+    'SpeedyBee' :      { 'fname' : 'rx-speedybee',   'chipset' : 'esp8285' },
 }
 
 g_txModuleInternalDeviceTypeDict = {
@@ -49,12 +53,24 @@ g_txModuleInternalDeviceTypeDict = {
 
 description_stm32_dfu_default = (
     "Flash method: DFU\n" +
-    "  - connect to USB while pressing the button\n")
+    "  - connect to USB while pressing the button\n"
+    )
 
 description_stm32_stlink_default = (
-    "Flash method: STLink\n" + 
-    "  - connect SWD pads to STLink\n")
+    "Flash method: STLink\n" +
+    "  - connect SWD pads to STLink\n"
+    )
 
+description_esp_esptool_uart_default = (
+    "Flash method: esptool\n" +
+    "  - connect Tx,Rx pads to USB-TTL adapter\n" +
+    "  - select COM port\n" +
+    "  - power up receiver while pressing the button\n"
+    )
+
+description_ap_passthru_default = (
+    "In addition flashing via ArduPilot passthrough is supported.\n"
+    )
 
 
 g_targetDict = {
@@ -65,7 +81,7 @@ g_targetDict = {
     # - 'flashmethod' : 'stlink'
     'tx-matek' : {
         'flashmethod' : 'dfu',
-        'description' : 
+        'description' :
             description_stm32_dfu_default +
             "\nWireless bridge: HC04, cannot be flashed\n",
     },
@@ -182,9 +198,7 @@ g_targetDict = {
         'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
         'rx-R9MX-l433cb': {
             'flashmethod' : 'stlink,appassthru',
-            'description' : 
-                description_stm32_stlink_default + 
-                "In addition flashing via ArduPilot passthrough is supported.\n",
+            'description' : description_stm32_stlink_default + description_ap_passthru_default,
         }
     },
     'rx-E77-MBLKit' : {
@@ -204,12 +218,37 @@ g_targetDict = {
     },
 
     # esp defaults:
-    # - 'flashmethod' : ??
-    'rx-bayck' : {},
-    'rx-betafpv' : {},
-    'rx-generic' : {},
-    'rx-generic-c3-lr1121' : {},
-    'rx-radiomaster' : {},
-    'rx-speedybee' : {},
+    # - 'flashmethod' : 'esptool,appassthru'
+    'rx-radiomaster' : {
+        'flashmethod' : 'esptool,appassthru',
+        'description' : description_esp_esptool_uart_default + description_ap_passthru_default,
+        'rx-radiomaster-br3-900' : {
+            'chipset' : 'esp8285',
+        },
+        'rx-radiomaster-rp4td-2400' : {
+            'chipset' : 'esp32',
+        },
+        'rx-radiomaster-xr1-900' : {
+            'chipset' : 'esp32c3',
+        },
+        'rx-radiomaster-xr4-900' : {
+            'chipset' : 'esp32',
+        },
+    },
+    'rx-betafpv' : {
+        'chipset' : 'esp32',
+        'flashmethod' : 'esptool,appassthru',
+        'description' : description_esp_esptool_uart_default + description_ap_passthru_default,
+    },
+    'rx-bayck' : {
+        'chipset' : 'esp8285',
+        'flashmethod' : 'esptool,appassthru',
+        'description' : description_esp_esptool_uart_default + description_ap_passthru_default,
+    },
+    'rx-speedybee' : {
+        'chipset' : 'esp8285',
+        'flashmethod' : 'esptool,appassthru',
+        'description' : description_esp_esptool_uart_default + description_ap_passthru_default,
+    },
 }
 
