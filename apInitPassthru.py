@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 16. Feb. 2025 001
+# 21. Feb. 2025 001
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
@@ -272,7 +272,7 @@ def mlrs_find_receiver_baud(apport, serialx, baud):
     return receiver_baud     
 
 
-def mlrs_open_passthrough(comport, serialx, baud):
+def mlrs_open_passthrough(comport, serialx, baud, options=''):
     print('------------------------------------------------------------')
     print('Find USB port of your flight controller')
     if comport:
@@ -298,8 +298,9 @@ def mlrs_open_passthrough(comport, serialx, baud):
     print('------------------------------------------------------------')
     ardupilot_open_passthrough(link, serialx)
     print('------------------------------------------------------------')
-    mlrs_put_into_systemboot(link)
-    print('------------------------------------------------------------')
+    if not 'nosysboot' in options:
+        mlrs_put_into_systemboot(link)
+        print('------------------------------------------------------------')
     link.close()
     print('')
     print('PASSTHROUGH READY FOR PROGRAMMING TOOL')
@@ -320,6 +321,7 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--baud", type=int, default=57600, help="Baudrate of the SERIALx connection to the receiver")
     parser.add_argument("-findport", action='store_true', help = 'Find port')
     parser.add_argument("-findbaud", action='store_true', help = 'Find baudrate')
+    parser.add_argument("-nosysboot", action='store_true', help = 'Do not put into system boot')
     args = parser.parse_args()
 
     comport = args.com
@@ -333,7 +335,10 @@ if __name__ == '__main__':
         receiver_baud = mlrs_find_receiver_baud(comport, serialx, baud)
         sys.exit(-receiver_baud) # report back com port, for use in batch file
 
-    mlrs_open_passthrough(comport, serialx, baud)
+    options = ''
+    if args.nosysboot: 
+        options = 'nosysboot'
+    mlrs_open_passthrough(comport, serialx, baud, options)
     
     
 
@@ -348,6 +353,7 @@ example usage in batch file
 @if %ERRORLEVEL% GEQ 1 EXIT /B 1
 @if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%
 @apInitPassthru.py -c "COM%PORT%" -s 2 -b %BAUDRATE%  
+@if %ERRORLEVEL% GEQ 1 EXIT /B 1
 @timeout /t 5 /nobreak
 @thirdparty\STM32CubeProgrammer\win\bin\STM32_Programmer_CLI.exe -c port="COM%PORT%" br=%BAUDRATE% -w "temp\rx-R9MX-l433cb-v1.3.05-@28fe6be0.hex" -v -g
 @ECHO.

@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 21. Feb. 2025 001
+# 21. Feb. 2025 002
 #************************************************************
-app_version = '21.02.2025-001'
+app_version = '21.02.2025-002'
 
 import os, sys, time
 import subprocess
@@ -82,7 +82,7 @@ STLink Flashing Tools
 --------------------------------------------------
 '''
 
-def flash_stm32cubeprogrammer_argstr(programmer, firmware, comport=None, baudrate=None):
+def flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
     if 'dfu' in programmer:
         args = '-c port=usb1 -w "'+firmware+'" -v -g'
     elif 'uart' in programmer:
@@ -108,7 +108,7 @@ def flash_stm32cubeprogrammer_win(programmer, firmware):
     os_system('mlrs_flasher_runner.bat', pause=False)
 
 
-def flash_stm32cubeprogrammer(programmer, firmware, comport=None, baudrate=None):
+def flash_stm32cubeprogrammer(programmer, firmware, comport, baudrate):
     if sys.platform.lower() == 'darwin':
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','mac','bin','STM32_Programmer_CLI')
     elif sys.platform.lower() == 'linux':
@@ -129,6 +129,7 @@ def flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware):
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
     F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
     F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE%'+'\n')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
     F.write('@timeout /t 5 /nobreak'+'\n')
     F.write(ST_Programmer + ' -c port="COM%PORT%" br=%BAUDRATE% -w "' + firmware +'" -v -g\n')
     F.write('@ECHO.'+'\n')
@@ -142,15 +143,18 @@ def flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware):
 
 def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
     res = os_system('apInitPassthru.py -findport', allow_neg_res=True)
+    if res > 0: return
     comport = 'COM'+str(-res) #TODO: what for mac,lin ???
     #print(res, comport)
     res = os_system('apInitPassthru.py -findbaud -c "'+comport+'" -s '+str(serialx_no), allow_neg_res=True)
+    if res > 0: return
     baudrate = int(-res)
     #print(res, baudrate)
     res = os_system('apInitPassthru.py -c "'+comport+'" -s '+str(serialx_no)+' -b '+str(baudrate), allow_neg_res=True)
+    if res > 0: return
     #print('waiting for 5 secs...')
     time.sleep(5.0)
-    flash_stm32cubeprogrammer('uart', firmware, comport=comport, baudrate=baudrate)
+    flash_stm32cubeprogrammer('uart', firmware, comport, baudrate)
 
 
 def flashSTM32CubeProgrammer(programmer, firmware):
@@ -259,7 +263,7 @@ def flash_esptool_argstr(programmer, firmware, comport, baudrate):
             '--chip esp32 ' +
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
-            '--before default_reset --after hard_reset ' + 
+            '--before default_reset --after hard_reset ' +
             'write_flash ' +
             '-z ' +
             '--flash_mode dio --flash_freq 40m --flash_size 4MB ' +
@@ -320,29 +324,74 @@ def flash_esptool(programmer, firmware, comport, baudrate):
     os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args)
 
 
-def flashEspToolProgrammer(programmer, firmware, comport, baudrate):
-    if os_system_run_as_bat():
-        print('Run on Windows as batch file')
-        flash_esptool_win(programmer, firmware, comport, baudrate)
-        return
+def flash_esptool_appassthru_win(programmer, serialx_no, firmware):
+    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
+    F.write('@apInitPassthru.py -findport'+'\n')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
+    F.write('@if %ERRORLEVEL% LEQ 0 set /a PORT=-%ERRORLEVEL%'+'\n')
+    F.write('@apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
+    F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
+    F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE% -nosysboot'+'\n')
+    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
+    F.write('@timeout /t 5 /nobreak'+'\n')
+    esptool_args = flash_esptool_argstr(programmer, firmware, 'COM%PORT%', '%BAUDRATE%')
+    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO *** DONE ***'+'\n')
+    F.write('@ECHO.'+'\n')
+    F.write('@ECHO Cheers, and have fun.'+'\n')
+    if os_system_is_frozen_app(): F.write('@pause'+'\n')
+    F.close()
+    os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
 
-    # firmware filename gives the complete path
-    #print('flashEspToolProgrammer()')
-    #print(programmer)
-    #print(firmware)
-    #radioport = open_passthrough(baudrate)
-    #flash_esp32(firmware, radioport, baudrate)
-    #find_esp_on_usb_device_serial_ports()
 
-    #baudrate = 921600
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+def flash_esptool_appassthru(programmer, serialx_no, firmware):
+    res = os_system('apInitPassthru.py -findport', allow_neg_res=True)
+    if res > 0: return
+    comport = 'COM' + str(-res) #TODO: what for mac,lin ???
+    #print(res, comport)
+    res = os_system('apInitPassthru.py -findbaud -c "'+comport+'" -s '+str(serialx_no), allow_neg_res=True)
+    if res > 0: return
+    baudrate = int(-res)
+    #print(res, baudrate)
+    res = os_system('apInitPassthru.py -c "'+comport+'" -s '+str(serialx_no)+' -b '+str(baudrate)+' -nosysboot', allow_neg_res=True)
+    if res > 0: return
+    #print('waiting for 5 secs...')
+    time.sleep(5.0)
     flash_esptool(programmer, os.path.join(temp_path, firmware), comport, baudrate)
 
+
+def flashEspToolProgrammer(programmer, firmware, comport, baudrate):
+    serialx_no = None
+    f = re.search(r' serial([0-9]+?)', programmer.lower())
+    if f:
+        serialx_no = f.group(1)
+
+    if os_system_run_as_bat():
+        print('Run on Windows as batch file')
+        if 'appassthru' in programmer:
+            flash_esptool_appassthru_win(programmer, serialx_no, firmware)
+        else:
+            flash_esptool_win(programmer, firmware, comport, baudrate)
+        return
+
+    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
+    if 'appassthru' in programmer:
+        flash_esptool_appassthru(programmer, serialx_no, os.path.join(temp_path, firmware))
+    else:
+        flash_esptool(programmer, os.path.join(temp_path, firmware), comport, baudrate)
     print()
     print('*** DONE ***')
     print()
     print('Please remove the USB cable.')
     print('Cheers, and have fun.')
+
+
+#os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
+#exit(1)
+#flashEspToolProgrammer('esp8285 appassthru serial2', 'temp/rx-bayck-nano-pro-900-v1.3.05-@28fe6be0.bin', None, None)
+#exit(1)
 
 
 '''
@@ -997,16 +1046,16 @@ class App(ctk.CTk):
                     else:
                         flashDevice('stm32 stlink', key['url'], firmware_filename) # STLink is default
                     return
-                if 'esp' in chipset:
+                elif 'esp' in chipset:
                     # VSCODE/Platformio does 'no dtr', so we do too, seems not be critical
-                    # VSCODE/Platformio uses for esp32 --flash_freq 80m, we do --flash_freq 40m 
+                    # VSCODE/Platformio uses for esp32 --flash_freq 80m, we do --flash_freq 40m
                     if 'appassthru' in flashmethod:
                         serialx = self.fReceiver_Serialx_menu.get().lower()
                         flashDevice(chipset + ' no dtr appassthru ' + serialx, key['url'], firmware_filename)
                     else: # 'esptool'
                         comport = self.fReceiver_ComPort_menu.get()
                         print('--->',comport)
-                        flashDevice(chipset + 'no dtr', key['url'], firmware_filename, comport=comport, baudrate=921600)
+                        flashDevice(chipset + ' no dtr', key['url'], firmware_filename, comport=comport, baudrate=921600)
                     return
         print('ERROR: flashReceiverFirmware() [2]')
 
