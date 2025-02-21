@@ -42,12 +42,13 @@ def create_dir(path):
     if not os.path.exists(path):
         make_dir(path)
 
-def os_system(arg, allow_neg_res=False):
+# used by flashXXX functions to call flasher
+def os_system(arg, allow_neg_res=False, pause=True):
     res = os.system(arg)
     if res > 0 or (not allow_neg_res and res < 0):
         print('# ERROR (errno =',res,') DONE #')
-        os.system("pause")
-        sys.exit(1)
+        if pause: os.system("pause")
+        #sys.exit(1) # no, we don't need to exit
     return res
 
 def os_system_run_as_bat():
@@ -68,6 +69,9 @@ def find_serial_ports():
         return None
     deviceportList = []
     for port in portList:
+        #print('*',port.device, port.name, port.description)
+        #print(' ',port.hwid, port.vid, port.pid)
+        #print(' ',port.manufacturer, port.location, port.product, port.interface)
         deviceportList.append(port.device)
     return deviceportList
 
@@ -101,7 +105,7 @@ def flash_stm32cubeprogrammer_win(programmer, firmware):
 ###    F.write('@pause'+'\n')
     if os_system_is_frozen_app(): F.write('@pause'+'\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat')
+    os_system('mlrs_flasher_runner.bat', pause=False)
 
 
 def flash_stm32cubeprogrammer(programmer, firmware, comport=None, baudrate=None):
@@ -133,7 +137,7 @@ def flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware):
     F.write('@ECHO Cheers, and have fun.'+'\n')
     if os_system_is_frozen_app(): F.write('@pause'+'\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat', allow_neg_res=True)
+    os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
 
 
 def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
@@ -143,7 +147,7 @@ def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
     res = os_system('apInitPassthru.py -findbaud -c "'+comport+'" -s '+str(serialx_no), allow_neg_res=True)
     baudrate = int(-res)
     #print(res, baudrate)
-    res = os_system('apInitPassthru.py -c "'+comport+'" -s '+str(serialx_no)+' -b '+str(baudrate))
+    res = os_system('apInitPassthru.py -c "'+comport+'" -s '+str(serialx_no)+' -b '+str(baudrate), allow_neg_res=True)
     #print('waiting for 5 secs...')
     time.sleep(5.0)
     flash_stm32cubeprogrammer('uart', firmware, comport=comport, baudrate=baudrate)
@@ -206,9 +210,6 @@ def find_esp_device_serial_ports():
         if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
             continue
         deviceportList.append(port.device)
-        #print('*',port.device, port.name, port.description)
-        #print(' ',port.hwid, port.vid, port.pid)
-        #print(' ',port.manufacturer, port.location, port.product, port.interface)
     return deviceportList
 
 
@@ -272,7 +273,7 @@ def flash_esptool_win(programmer, firmware, comport, baudrate):
 ###    F.write('@pause'+'\n')
     if os_system_is_frozen_app(): F.write('@pause'+'\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat')
+    os_system('mlrs_flasher_runner.bat', pause=False)
 
 
 def flash_esptool(programmer, firmware, comport, baudrate):
@@ -341,7 +342,7 @@ def flash_internal_elrs_tx_module_win(firmware, wirelessbridge=False):
 ###    F.write('@pause'+'\n')
     if os_system_is_frozen_app(): F.write('@pause'+'\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat')
+    os_system('mlrs_flasher_runner.bat', pause=False)
 
 #flash_internal_elrs_tx_module_win('tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
 #exit(1)
@@ -436,7 +437,7 @@ def requestJsonDict(url, error_msg=''):
 def requestData(url, error_msg=''):
     jsonDict = None
     try:
-        res = requests.get(url, allow_redirects=True)
+        res = requests.get(url, allow_redirects=True, timeout=(10,15))
         if b'API rate limit exceeded' in res.content:
             print(res.content)
             print('DONWLOAD FAILED!')
@@ -697,6 +698,7 @@ class CTkFlashButton(ctk.CTkButton):
 class CTkInfoTextbox(ctk.CTkTextbox):
     def __init__(self, master, **kwargs):
         super().__init__(master=master, **kwargs)
+        super().delete("0.0", "end")
         super().configure(state="disabled")
 
     def setText(self, txt):
@@ -1031,11 +1033,11 @@ class App(ctk.CTk):
         self.startup()
 
         self.ini_open()
-        
+
     def startup(self):
         # these are 'static' and equal for each section
         self.updateDeviceTypes()
-        
+
     def after_startup(self):
         print('downloading metadata from github repository...')
         res1 = self.updateFirmwareVersions()
@@ -1328,7 +1330,7 @@ class App(ctk.CTk):
             porttype = 'esp32',
             values=['COM1'],
             width=10,
-            command=self.fTxModuleExternal_ComPort_menu_event)
+            )#command=self.fTxModuleExternal_ComPort_menu_event)
         self.fTxModuleExternal_ComPort_menu.grid(row=0, column=1, padx=20)
         self.fTxModuleExternal_ComPort_menu.grid_remove() # grid_remove() memorizes settings, grid_forget() looses them
 
@@ -1353,12 +1355,14 @@ class App(ctk.CTk):
         self.fTxModuleExternal_Description_textbox = CTkInfoTextbox(self.fTxModuleExternal,
             #height=100,
             font=("Courier New",12),
+            #activate_scrollbars=False,
             )
         self.fTxModuleExternal_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
         wrow += 1
 
         self.fTxModuleExternal_fWirelessBridge.grid_remove() # pack_forget() did not work!
-        self.fTxModuleExternal_Description_textbox.grid_remove()
+        self.fTxModuleExternal_Description_textbox.setText("downloading metadata...\n")
+        #self.fTxModuleExternal_Description_textbox.grid_remove()
 
     def fTxModuleExternal_ComPort_HandleIt(self):
         device_type = self.fTxModuleExternal_DeviceType_menu.get()
@@ -1404,9 +1408,6 @@ class App(ctk.CTk):
 
     def fTxModuleExternal_Flash_button_event(self):
         self.flashTxModuleExternalFirmware()
-
-    def fTxModuleExternal_ComPort_menu_event(self, opt):
-        pass
 
     def fTxModuleExternal_WirelessBridgeFlash_button_event(self):
         self.flashTxModuleExternalWirelessBridgeFirmware()
@@ -1474,7 +1475,7 @@ class App(ctk.CTk):
 
         self.fReceiver_Flashmethod_menu = ctk.CTkOptionMenu(self.fReceiver_fFlashMethod,
             #values=["-"],
-            width=120,
+            width=140,
             command=self.fReceiver_Flashmethod_menu_event)
         self.fReceiver_Flashmethod_menu.grid(row=0, column=0, padx=0, sticky="w")
         self.fReceiver_Serialx_menu = ctk.CTkOptionMenu(self.fReceiver_fFlashMethod,
@@ -1495,6 +1496,7 @@ class App(ctk.CTk):
         self.fReceiver_Description_textbox.grid(row=wrow, column=0, columnspan=2, padx=20, pady=20, sticky="nsew")
         wrow += 1
 
+        self.fReceiver_Description_textbox.setText("downloading metadata...\n")
         #self.fReceiver_Description_textbox.grid_remove()
 
     def fReceiver_UpdateWidgets(self):
@@ -1507,8 +1509,8 @@ class App(ctk.CTk):
         else:
             self.fReceiver_Description_textbox.grid()
             self.fReceiver_Description_textbox.setText(description)
-        #flashmethod = 'stlink'
-        #flashmethod = 'stlink,appassthru'
+        #flashmethod = 'esptool'
+        #flashmethod = 'esptool,appassthru'
         #print(flashmethod)
         if flashmethod == None or ',' not in flashmethod:
             self.fReceiver_Flashmethod_label.grid_remove()

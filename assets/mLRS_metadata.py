@@ -26,7 +26,6 @@ g_txModuleExternalDeviceTypeDict = {
     'BetaFPV' :        { 'fname' : 'tx-betafpv',     'chipset' : 'esp32' },
 }
 
-
 g_receiverDeviceTypeDict = {
     'MatekSys' :       { 'fname' : 'rx-matek',       'chipset' : 'stm32' },
     'FrSky R9' :       { 'fname' : 'rx-R9',          'chipset' : 'stm32' },
@@ -35,7 +34,6 @@ g_receiverDeviceTypeDict = {
     'Easysolder' :     { 'fname' : 'rx-easysolder',  'chipset' : 'stm32' },
     'FlySky FRM 303' : { 'fname' : 'rx-FRM303',      'chipset' : 'stm32' },
 }
-
 
 g_txModuleInternalDeviceTypeDict = {
     'Jumper Radio' :      { 'fname' : 'tx-jumper-internal',      'chipset' : 'esp32' },
