@@ -1887,3 +1887,4 @@ if __name__ == "__main__":
     app.after(10,app.after_startup())
     app.mainloop()
     app.closed()
+

@@ -90,7 +90,7 @@ def open_passthrough(comport = None, baudrate = 115200, wirelessbridge = None):
     if comport:
         radioport = comport
         print('Your radio is on com port', radioport)
-    else:    
+    else:
         radioport = find_radioport()
 
     try:
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         sys.exit(-int(radioport[3:])) # report back com port, for use in batch file
 
     radioport = open_passthrough(comport = args.com, baudrate = args.baud, wirelessbridge = args.wirelessbridge)
-    
+
     sys.exit(-int(radioport[3:]))
 
 
@@ -198,3 +198,4 @@ example usage in batch file
    if os_system_is_frozen_app(): F.write('@pause'+'\n')
 
 '''
+

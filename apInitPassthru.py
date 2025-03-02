@@ -36,9 +36,9 @@ def find_ardupilot_serial_ports():
     '''
     ArduPilot's USB port is known to have vid == 0x1209, pid = 0x5740
     It usually offers at least two, one SLCAN and one MAVLink
-    on Win: 
+    on Win:
         description = ArduPilot SLCAN (COMxx) or ArduPilot MAVlink (COMxx)
-        manufacturer = ArduPilot Project 
+        manufacturer = ArduPilot Project
     '''
     try:
         from serial.tools.list_ports import comports
@@ -46,7 +46,7 @@ def find_ardupilot_serial_ports():
     except:
         print('ERROR: find_radio_serial_port() [1]')
         return None
-    '''    
+    '''
     for port in portList:
         print('*',port.device)
         print('  ',port.name)
@@ -58,7 +58,7 @@ def find_ardupilot_serial_ports():
         print('  ',port.manufacturer)
         print('  ',port.product)
         print('  ',port.interface)
-    '''    
+    '''
     apportList = []
     for port in portList:
         if port.vid == 0x1209 and port.pid == 0x5740:
@@ -107,7 +107,7 @@ def mav_recv_match(link, msg_type, timeout=1.0):
 
 def ardupilot_connect(uart, baud):
     print('connect to flight controller...')
-    
+
     link = mavutil.mavlink_connection(uart, baud)
     if not link:
         return None
@@ -132,7 +132,7 @@ def ardupilot_connect(uart, baud):
 
 def ardupilot_find_serialx_baud(link, serialx):
     print('find SERIALx, receiver baud rate...')
-        
+
     param_str = 'SERIAL'+str(serialx)+'_PROTOCOL'
     link.mav.param_request_read_send(
         link.target_system, link.target_component,
@@ -168,7 +168,7 @@ def ardupilot_find_serialx_baud(link, serialx):
 
 def ardupilot_open_passthrough(link, serialx, passthru_timeout=0):
     print('open serial passthrough...')
-    
+
     # set up passthrough with no timeout, power cycle to exit
     print('  set SERIAL_PASSTIMO = '+str(passthru_timeout))
     mavparm.MAVParmDict().mavset(link, "SERIAL_PASSTIMO", passthru_timeout)
@@ -219,10 +219,10 @@ def mlrs_cmd_preflight_reboot_shutdown(link, cmd_confirmation, cmd_action, sysid
                 0, 0,
                 1234321)
             tries_cnt += 1
-            
+
     link.close()
     return False
-            
+
 
 def mlrs_put_into_systemboot(link, sysid=51, compid=68):
     print('check connection to mLRS receiver...')
@@ -230,7 +230,7 @@ def mlrs_put_into_systemboot(link, sysid=51, compid=68):
     if not res:
         do_error('Sorry, something went wrong.')
     print('mLRS receiver connected')
-    
+
     # Arm reboot
 
     print('arm mLRS receiver for reboot shutdown...')
@@ -257,7 +257,7 @@ def mlrs_find_apport():
             do_error('Sorry, something went wrong and we could not find the USB port of your ArduPilot flight controller.')
     apport = apports_list[0]
     print('Your Ardupilot flight controller is on USB port', apport)
-    return apport 
+    return apport
 
 
 def mlrs_find_receiver_baud(apport, serialx, baud):
@@ -269,7 +269,7 @@ def mlrs_find_receiver_baud(apport, serialx, baud):
     if not receiver_baud:
         do_error('Sorry, something went wrong.')
     print('mLRS receiver baudrate is', receiver_baud)
-    return receiver_baud     
+    return receiver_baud
 
 
 def mlrs_open_passthrough(comport, serialx, baud, options=''):
@@ -277,7 +277,7 @@ def mlrs_open_passthrough(comport, serialx, baud, options=''):
     print('Find USB port of your flight controller')
     if comport:
         apport = comport
-    else:    
+    else:
         apport = mlrs_find_apport()
     print('USB port:', apport)
     print('SERIALx number:', serialx)
@@ -304,7 +304,7 @@ def mlrs_open_passthrough(comport, serialx, baud, options=''):
     link.close()
     print('')
     print('PASSTHROUGH READY FOR PROGRAMMING TOOL')
-    
+
     return apport, receiver_baud
 
 
@@ -326,8 +326,8 @@ if __name__ == '__main__':
 
     comport = args.com
     serialx = args.serialx
-    baud = args.baud # must match speed of serial link to receiver, usb baud rate is transparently forwarded to port2 
-    
+    baud = args.baud # must match speed of serial link to receiver, usb baud rate is transparently forwarded to port2
+
     if args.findport:
         apport = mlrs_find_apport()
         sys.exit(-int(apport[3:])) # report back com port, for use in batch file
@@ -336,23 +336,23 @@ if __name__ == '__main__':
         sys.exit(-receiver_baud) # report back com port, for use in batch file
 
     options = ''
-    if args.nosysboot: 
+    if args.nosysboot:
         options = 'nosysboot'
     mlrs_open_passthrough(comport, serialx, baud, options)
-    
-    
 
-    
+
+
+
 '''
 example usage in batch file
 
 @apInitPassthru.py -findport
 @if %ERRORLEVEL% GEQ 1 EXIT /B 1
 @if %ERRORLEVEL% LEQ 0 set /a PORT=-%ERRORLEVEL%
-@apInitPassthru.py -findbaud -c "COM%PORT%" -s 2 
+@apInitPassthru.py -findbaud -c "COM%PORT%" -s 2
 @if %ERRORLEVEL% GEQ 1 EXIT /B 1
 @if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%
-@apInitPassthru.py -c "COM%PORT%" -s 2 -b %BAUDRATE%  
+@apInitPassthru.py -c "COM%PORT%" -s 2 -b %BAUDRATE%
 @if %ERRORLEVEL% GEQ 1 EXIT /B 1
 @timeout /t 5 /nobreak
 @thirdparty\STM32CubeProgrammer\win\bin\STM32_Programmer_CLI.exe -c port="COM%PORT%" br=%BAUDRATE% -w "temp\rx-R9MX-l433cb-v1.3.05-@28fe6be0.hex" -v -g
@@ -362,3 +362,4 @@ example usage in batch file
 @ECHO Cheers, and have fun.
 
 '''
+
