@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Meta Data for mLRS Flahser Desktop App
-# 18. Feb. 2025 001
+# 7. Mar. 2025 001
 #************************************************************
 
 
@@ -37,6 +37,7 @@ g_receiverDeviceTypeDict = {
     'BetaFPV' :        { 'fname' : 'rx-betafpv',     'chipset' : 'esp32' },
     'Bayck' :          { 'fname' : 'rx-bayck',       'chipset' : 'esp8285' },
     'SpeedyBee' :      { 'fname' : 'rx-speedybee',   'chipset' : 'esp8285' },
+    'ELRS Generic' :   { 'fname' : 'rx-generic',     'chipset' : 'espxx' },
 }
 
 g_txModuleInternalDeviceTypeDict = {
@@ -249,6 +250,20 @@ g_targetDict = {
         'chipset' : 'esp8285',
         'flashmethod' : 'esptool,appassthru',
         'description' : description_esp_esptool_uart_default + description_ap_passthru_default,
+    },
+    'rx-generic' : {
+        'flashmethod' : 'esptool,appassthru',
+        'description' : description_esp_esptool_uart_default + description_ap_passthru_default,
+        'chipset' : 'esp8285',
+        'rx-generic-2400-td-pa' : {
+            'chipset' : 'esp32',
+        },
+        'rx-generic-900-td-pa' : {
+            'chipset' : 'esp32',
+        },
+        'rx-generic-c3' : {
+            'chipset' : 'esp32c3',
+        },
     },
 }
 
