@@ -1065,7 +1065,7 @@ class App(ctk.CTk):
         if 'failed' in firmware_filename:
             print('ERROR: flashTxModuleInternalFirmware() [1]')
             return
-        chipset, flashmethod, description, wireless = self.get_metadata('rx', device_type, firmware_filename)
+        chipset, flashmethod, description, wireless = self.get_metadata('txint', device_type, firmware_filename)
         if chipset != 'esp32': # currently must be esp32
             print('ERROR: flashTxModuleInternalFirmware() [3]')
             sys.exit(1)
