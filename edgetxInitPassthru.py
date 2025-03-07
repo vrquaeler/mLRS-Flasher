@@ -5,7 +5,7 @@
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 #************************************************************
 # Open passthrough to internal Tx module of EdgeTx/OpenTx radios
-# 15. Feb. 2025
+# 7. Mar. 2025
 #************************************************************
 
 import os, sys, time
@@ -30,7 +30,7 @@ def find_radio_serial_ports():
     for port in portList:
         if port.vid == 0x0483 and port.pid == 0x5740:
             if os.name == 'posix': # we do have more info on this os
-                if port.manufacturer == 'OpenTX' or port.manufacturer == 'EdgeTX':
+                if port.manufacturer == 'EdgeTX' or port.manufacturer == 'OpenTX':
                     radioportList.append(port.device)
             else:
                 radioportList.append(port.device)
@@ -170,11 +170,10 @@ if __name__ == "__main__":
 
     if args.findport:
         radioport = find_radioport()
+        print('RADIOPORT='+radioport+';', file=sys.stderr)
         sys.exit(-int(radioport[3:])) # report back com port, for use in batch file
 
-    radioport = open_passthrough(comport = args.com, baudrate = args.baud, wirelessbridge = args.wirelessbridge)
-
-    sys.exit(-int(radioport[3:]))
+    open_passthrough(comport = args.com, baudrate = args.baud, wirelessbridge = args.wirelessbridge)
 
 
 

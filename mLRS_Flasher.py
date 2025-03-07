@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 21. Feb. 2025 002
+# 7. Mar. 2025 001
 #************************************************************
-app_version = '21.02.2025-002'
+app_version = '7.03.2025-001'
 
 import os, sys, time
 import subprocess
@@ -74,6 +74,10 @@ def find_serial_ports():
         #print(' ',port.manufacturer, port.location, port.product, port.interface)
         deviceportList.append(port.device)
     return deviceportList
+
+
+import apInitPassthru as appassthru
+import edgetxInitPassthru as radio
 
 
 '''
@@ -142,16 +146,8 @@ def flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware):
 
 
 def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
-    res = os_system('apInitPassthru.py -findport', allow_neg_res=True)
-    if res > 0: return
-    comport = 'COM'+str(-res) #TODO: what for mac,lin ???
-    #print(res, comport)
-    res = os_system('apInitPassthru.py -findbaud -c "'+comport+'" -s '+str(serialx_no), allow_neg_res=True)
-    if res > 0: return
-    baudrate = int(-res)
-    #print(res, baudrate)
-    res = os_system('apInitPassthru.py -c "'+comport+'" -s '+str(serialx_no)+' -b '+str(baudrate), allow_neg_res=True)
-    if res > 0: return
+    comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, serialx_no)
+    #TODO: add a way to gracefully jump out in case of an error
     #print('waiting for 5 secs...')
     time.sleep(5.0)
     flash_stm32cubeprogrammer('uart', firmware, comport, baudrate)
@@ -347,16 +343,8 @@ def flash_esptool_appassthru_win(programmer, serialx_no, firmware):
 
 
 def flash_esptool_appassthru(programmer, serialx_no, firmware):
-    res = os_system('apInitPassthru.py -findport', allow_neg_res=True)
-    if res > 0: return
-    comport = 'COM' + str(-res) #TODO: what for mac,lin ???
-    #print(res, comport)
-    res = os_system('apInitPassthru.py -findbaud -c "'+comport+'" -s '+str(serialx_no), allow_neg_res=True)
-    if res > 0: return
-    baudrate = int(-res)
-    #print(res, baudrate)
-    res = os_system('apInitPassthru.py -c "'+comport+'" -s '+str(serialx_no)+' -b '+str(baudrate)+' -nosysboot', allow_neg_res=True)
-    if res > 0: return
+    comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, serialx_no)
+    #TODO: add a way to gracefully jump out in case of an error
     #print('waiting for 5 secs...')
     time.sleep(5.0)
     flash_esptool(programmer, os.path.join(temp_path, firmware), comport, baudrate)
@@ -431,9 +419,6 @@ def flash_internal_elrs_tx_module_win(firmware, wirelessbridge=False):
 
 #flash_internal_elrs_tx_module_win('tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
 #exit(1)
-
-
-import edgetxInitPassthru as radio
 
 
 def flashInternalElrsTxModule(programmer, firmware):

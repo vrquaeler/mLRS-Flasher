@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 21. Feb. 2025 001
+# 7. Mar. 2025 001
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
@@ -260,8 +260,8 @@ def mlrs_find_apport():
     return apport
 
 
-def mlrs_find_receiver_baud(apport, serialx, baud):
-    link = ardupilot_connect(apport, baud)
+def mlrs_find_receiver_baud(apport, baudrate, serialx):
+    link = ardupilot_connect(apport, baudrate)
     if not link:
         do_error('Sorry, something went wrong.')
     receiver_baud = ardupilot_find_serialx_baud(link, serialx)
@@ -272,7 +272,7 @@ def mlrs_find_receiver_baud(apport, serialx, baud):
     return receiver_baud
 
 
-def mlrs_open_passthrough(comport, serialx, baud, options=''):
+def mlrs_open_passthrough(comport, baudrate, serialx, options=''):
     print('------------------------------------------------------------')
     print('Find USB port of your flight controller')
     if comport:
@@ -280,17 +280,18 @@ def mlrs_open_passthrough(comport, serialx, baud, options=''):
     else:
         apport = mlrs_find_apport()
     print('USB port:', apport)
+    print('Baud rate:', baudrate)
     print('SERIALx number:', serialx)
-    print('Baud rate:', baud)
     print('------------------------------------------------------------')
-    link = ardupilot_connect(apport, baud)
+    link = ardupilot_connect(apport, baudrate)
     if not link:
         do_error('Sorry, something went wrong.')
     print('------------------------------------------------------------')
     receiver_baud = ardupilot_find_serialx_baud(link, serialx)
     if not receiver_baud:
+        link.close()
         do_error('Sorry, something went wrong.')
-    if baud != receiver_baud:
+    if baudrate != receiver_baud:
         print('Receiver baudrate is ', receiver_baud, ', change link to it')
         link.close()
         link = ardupilot_connect(apport, receiver_baud)
@@ -317,28 +318,33 @@ if __name__ == '__main__':
         description = 'ArduPilot passthrough to mLRS receiver'
         )
     parser.add_argument("-c", "--com", help="Com port corresponding to flight controller USB port. Examples: com5, /dev/ttyACM0")
+    parser.add_argument("-b", "--baud", type=int, default=57600, help="Baudrate of fligh controller")
     parser.add_argument("-s", "--serialx", type=int, help="ArduPilot SERIALx number of the receiver")
-    parser.add_argument("-b", "--baud", type=int, default=57600, help="Baudrate of the SERIALx connection to the receiver")
     parser.add_argument("-findport", action='store_true', help = 'Find port')
     parser.add_argument("-findbaud", action='store_true', help = 'Find baudrate')
     parser.add_argument("-nosysboot", action='store_true', help = 'Do not put into system boot')
     args = parser.parse_args()
 
     comport = args.com
+    baudrate = args.baud # we usually can start with some default to start communication with flight controller
     serialx = args.serialx
-    baud = args.baud # must match speed of serial link to receiver, usb baud rate is transparently forwarded to port2
 
     if args.findport:
         apport = mlrs_find_apport()
+        print('APPORT='+apport+';', file=sys.stderr)
         sys.exit(-int(apport[3:])) # report back com port, for use in batch file
     if args.findbaud:
-        receiver_baud = mlrs_find_receiver_baud(comport, serialx, baud)
-        sys.exit(-receiver_baud) # report back com port, for use in batch file
+        receiver_baud = mlrs_find_receiver_baud(comport, baudrate, serialx)
+        print('APBAUDRATE='+str(receiver_baud)+';', file=sys.stderr)
+        sys.exit(-receiver_baud) # report back SERIALx baudrate, for use in batch file
 
     options = ''
     if args.nosysboot:
         options = 'nosysboot'
-    mlrs_open_passthrough(comport, serialx, baud, options)
+    
+    apport, receiver_baud = mlrs_open_passthrough(comport, baudrate, serialx, options)
+    print('APPORT='+apport+';APBAUDRATE='+str(receiver_baud)+';', file=sys.stderr)
+    sys.exit(-receiver_baud) # report back SERIALx baudrate, for use in batch file
 
 
 
