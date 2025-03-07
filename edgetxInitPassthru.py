@@ -169,7 +169,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.findport:
-        radioport = mlrs_find_apport()
+        radioport = find_radioport()
         sys.exit(-int(radioport[3:])) # report back com port, for use in batch file
 
     radioport = open_passthrough(comport = args.com, baudrate = args.baud, wirelessbridge = args.wirelessbridge)
