@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 7. Mar. 2025 001
+# 11. Mar. 2025 001
 #************************************************************
-app_version = '7.03.2025-001'
+app_version = '11.03.2025-001'
 
 import os, sys, time
 import subprocess
@@ -775,12 +775,22 @@ class CTkInfoTextbox(ctk.CTkTextbox):
         super().__init__(master=master, **kwargs)
         super().delete("0.0", "end")
         super().configure(state="disabled")
+        super().tag_config('warning', foreground='red')
 
-    def setText(self, txt):
+    def setText(self, txt, tag=None):
         super().configure(state="normal")
         super().delete("0.0", "end")
         super().insert("0.0", txt)
+        if tag:
+            super().tag_add(tag[0], tag[1], tag[2])
         super().configure(state="disabled")
+        
+
+warning_dev_version = (
+    "WARNING: You are about to flash a 'dev' firmware version.\n" + 
+    "Please ensure you understand the risks involved with this.\n\n"
+    )
+warning_dev_version_tag = ['warning','1.0','2.100']
 
 
 class App(ctk.CTk):
@@ -1485,9 +1495,14 @@ class App(ctk.CTk):
             self.fTxModuleExternal_fWirelessBridge.grid()
         else:
             self.fTxModuleExternal_fWirelessBridge.grid_remove()
+        text, tag = '', None
+        if 'dev' in self.fTxModuleExternal_FirmwareVersion_menu.get():
+            text, tag = warning_dev_version, warning_dev_version_tag
         if description != None:
+            text += description
+        if text != '':
             self.fTxModuleExternal_Description_textbox.grid()
-            self.fTxModuleExternal_Description_textbox.setText(description)
+            self.fTxModuleExternal_Description_textbox.setText(text, tag)
         else:
             self.fTxModuleExternal_Description_textbox.grid_remove()
 
@@ -1614,11 +1629,16 @@ class App(ctk.CTk):
         device_type = self.fReceiver_DeviceType_menu.get()
         firmware_filename = self.fReceiver_FirmwareFile_menu.get()
         _, flashmethod, description, wireless = self.get_metadata('rx', device_type, firmware_filename)
-        if description == None:
-            self.fReceiver_Description_textbox.grid_remove()
-        else:
+        text, tag = '', None
+        if 'dev' in self.fReceiver_FirmwareVersion_menu.get():
+            text, tag = warning_dev_version, warning_dev_version_tag
+        if description != None:
+            text += description
+        if text != '':
             self.fReceiver_Description_textbox.grid()
-            self.fReceiver_Description_textbox.setText(description)
+            self.fReceiver_Description_textbox.setText(text, tag)
+        else:
+            self.fReceiver_Description_textbox.grid_remove()
         #flashmethod = 'esptool'
         #flashmethod = 'esptool,appassthru'
         #print(flashmethod)
@@ -1767,9 +1787,14 @@ class App(ctk.CTk):
             self.fTxModuleInternal_fWirelessBridge.grid()
         else:
             self.fTxModuleInternal_fWirelessBridge.grid_remove()
+        text, tag = '', None
+        if 'dev' in self.fTxModuleInternal_FirmwareVersion_menu.get():
+            text, tag = warning_dev_version, warning_dev_version_tag
         if description != None:
+            text += description
+        if text != '':
             self.fTxModuleInternal_Description_textbox.grid()
-            self.fTxModuleInternal_Description_textbox.setText(description)
+            self.fTxModuleInternal_Description_textbox.setText(text, tag)
         else:
             self.fTxModuleInternal_Description_textbox.grid_remove()
 
