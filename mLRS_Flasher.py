@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 11. Mar. 2025 001
+# 26. Mar. 2025 001
 #************************************************************
-app_version = '11.03.2025-001'
+app_version = '26.03.2025-001'
 
 import os, sys, time
 import subprocess
@@ -82,7 +82,7 @@ import edgetxInitPassthru as radio
 
 '''
 --------------------------------------------------
-STLink Flashing Tools
+STM32 Flashing Tools
 --------------------------------------------------
 '''
 
@@ -185,7 +185,7 @@ def flashSTM32CubeProgrammer(programmer, firmware):
 
 '''
 --------------------------------------------------
-ESP32 Flashing Tools
+ESP32/ESP82XX Flashing Tools
 --------------------------------------------------
 '''
 
@@ -486,8 +486,16 @@ g_Receiver_minimal_version = 'v1.3.00'
 g_TxModuleInternal_minimal_version = 'v1.3.05'
 g_LuaScript_minimal_version = 'v1.3.00'
 
+# url to file mlrs_firmware_urls.json, which hosts info on releases
+g_firmware_json_url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/tools/web/mlrs_firmware_urls.json'
+# url to a release branch
+g_repository_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/'
+# url to main branch
+g_main_branch_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
+
 
 def requestJsonDict(url, error_msg=''):
+    print('* request', url)
     res = None
     try:
         res = requests.get(url, allow_redirects=True, timeout=(10,15))
@@ -505,6 +513,7 @@ def requestJsonDict(url, error_msg=''):
 
 
 def requestData(url, error_msg=''):
+    print('* request', url)
     jsonDict = None
     try:
         res = requests.get(url, allow_redirects=True, timeout=(10,15))
@@ -533,14 +542,14 @@ def requestData(url, error_msg=''):
 def downloadVersionsDict():
     # download mlrs_firmware_urls.json
     # it holds the "released" versions, i.e., all non-dev versions
-    url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/tools/web/mlrs_firmware_urls.json'
-    res = requestJsonDict(url, 'ERROR: downloadVersionsDict() [1]')
+    # url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/tools/web/mlrs_firmware_urls.json'
+    res = requestJsonDict(g_firmware_json_url, 'ERROR: downloadVersionsDict() [1]')
     if not res:
         return res
     resDict = res
     #print(resDict)
 
-    # manipulate: add fields versionStr and gitUrl
+    # manipulate resDict: add fields versionStr and gitUrl
     for key in list(resDict.keys()):
         v = key.split('.')
         patch = int(v[2])
@@ -553,13 +562,14 @@ def downloadVersionsDict():
         else:
             resDict[key]['versionStr'] = key + ' (?)' # should not happen, play it safe
 
-        resDict[key]['gitUrl'] = 'https://api.github.com/repos/olliw42/mLRS/git/trees/' + resDict[key]['commit'] + '?recursive=true'
+        # url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/' + resDict[key]['commit'] + '?recursive=true'
+        resDict[key]['gitUrl'] = g_repository_url + resDict[key]['commit'] + '?recursive=true'
 
     # Figure out also the pre-release dev version. This needs work:
     # We need to read the main json, to get the current firmware folder url,
-    # then read one file name in this folder, and extract the version part from the file name
-    url_main = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
-    res = requestJsonDict(url_main, 'ERROR: downloadVersionsDict() [2]')
+    # then read one file name in this folder, and extract the version part from the file name.
+    # url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
+    res = requestJsonDict(g_main_branch_url, 'ERROR: downloadVersionsDict() [2]')
     if not res:
         return res
     resMainList = res['tree'] # it's a list of dictionaries
@@ -574,8 +584,8 @@ def downloadVersionsDict():
         return resDict
     #print(firmwarePathDict)
 
-    url_main_firmware = key['url'] + '?recursive=true' # not so many, so we can afford getting them all
-    res = requestJsonDict(url_main_firmware, 'ERROR: downloadVersionsDict() [2]')
+    url_main_firmware = firmwarePathDict['url'] + '?recursive=true' # not so many, so we can afford getting them all
+    res = requestJsonDict(url_main_firmware, 'ERROR: downloadVersionsDict() [3]')
     if not res:
         return res
     resMainFirmwareList = res['tree'] # it's a list of dictionaries
@@ -608,7 +618,7 @@ def downloadVersionsDict():
 # pass in a GitHub tree URL like https://api.github.com/repos/olliw42/mLRS/git/trees/f12d680?recursive=true
 # this is needed to get the list of files from the location which is specific to the version
 def downloadFilesListFromTree(txrxlua, url, device='', version=''):
-    res = requestJsonDict(url, 'ERROR: downloadFilesListFromTree()')
+    res = requestJsonDict(url, 'ERROR: downloadFilesListFromTree() [1]')
     if not res:
         return None
     resList = res['tree'] # it's a list of dictionaries
@@ -640,7 +650,7 @@ def downloadFilesListFromTree(txrxlua, url, device='', version=''):
             elif device not in key['path']: # only accept tx-device-internal
                 resList.remove(key)
     else: # 'tx' or 'rx'
-        if device == '' or version == '': print('ERROR: downloadFilesListFromTree() [2]')
+        if device == '' or version == '': print('ERROR: downloadFilesListFromTree() [3]')
         #print(url, device, version)
         #print(resList)
         for key in resList[:]: # creates a copy of the list, so we can easily remove

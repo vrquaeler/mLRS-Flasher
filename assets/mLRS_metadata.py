@@ -5,8 +5,8 @@
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 # OlliW @ www.olliw.eu
 #************************************************************
-# mLRS Meta Data for mLRS Flahser Desktop App
-# 7. Mar. 2025 001
+# mLRS Meta Data for mLRS Flasher Desktop App
+# 26. Mar. 2025 001
 #************************************************************
 
 
