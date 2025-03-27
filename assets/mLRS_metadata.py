@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Meta Data for mLRS Flasher Desktop App
-# 26. Mar. 2025 001
+# 27. Mar. 2025 001
 #************************************************************
 
 
@@ -202,11 +202,11 @@ g_targetDict = {
     # stm32 defaults:
     # - 'flashmethod' : 'stlink'
     'rx-matek' : {
-        'flashmethod' : 'dfu',
-        'description' : description_stm32_dfu_default,
+        'flashmethod' : 'dfu,appassthru',
+        'description' : description_stm32_dfu_default + description_ap_passthru_default,
         'rx-matek-mr900-22' : {
-            'flashmethod' : 'stlink',
-            'description' : description_stm32_stlink_default,
+            'flashmethod' : 'stlink,appassthru',
+            'description' : description_stm32_stlink_default + description_ap_passthru_default,
         },
     },
     'rx-R9' : {
