@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 27. Mar. 2025 001
+# 27. Mar. 2025 002
 #************************************************************
-app_version = '27.03.2025-001'
+app_version = '27.03.2025-002'
 
 import os, sys, time
 import subprocess
@@ -497,39 +497,49 @@ g_main_branch_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
 def requestJsonDict(url, error_msg=''):
     print('* request', url)
     res = None
-    try:
-        res = requests.get(url, allow_redirects=True, timeout=(10,15))
-        if b'API rate limit exceeded' in res.content:
-            print(res.content)
-            print('DONWLOAD FAILED!')
-            print(error_msg)
-            return False
-        jsonDict = res.json()
-    except:
-        if res: print(res.content)
-        print(error_msg)
-        return None
+    tries = 4
+    while tries > 0:
+        try:
+            res = requests.get(url, allow_redirects=True, timeout=(2,4))
+            if b'API rate limit exceeded' in res.content:
+                print(res.content)
+                print('DONWLOAD FAILED!')
+                print(error_msg)
+                return False
+            jsonDict = res.json()
+            break # got it
+        except:
+            tries = tries - 1
+            if tries < 0:
+                if res: print(res.content)
+                print(error_msg)
+                return None
     return jsonDict
 
 
 def requestData(url, error_msg=''):
     print('* request', url)
     jsonDict = None
-    try:
-        res = requests.get(url, allow_redirects=True, timeout=(10,15))
-        if b'API rate limit exceeded' in res.content:
-            print(res.content)
-            print('DONWLOAD FAILED!')
-            print(error_msg)
-            return False
+    tries = 4
+    while tries > 0:
         try:
-            jsonDict = res.json()
+            res = requests.get(url, allow_redirects=True, timeout=(2,4))
+            if b'API rate limit exceeded' in res.content:
+                print(res.content)
+                print('DONWLOAD FAILED!')
+                print(error_msg)
+                return False
+            try:
+                jsonDict = res.json()
+            except:
+                data = res.content
+            break # got it    
         except:
-            data = res.content
-    except:
-        print(res.content)
-        print(error_msg)
-        return None
+            tries = tries - 1
+            if tries < 0:
+                print(res.content)
+                print(error_msg)
+                return None
     if jsonDict:
         if jsonDict['encoding'] == 'base64':
             data = base64.b64decode(jsonDict['content'])
