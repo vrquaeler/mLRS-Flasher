@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 27. Mar. 2025 002
+# 27. Mar. 2025 003
 #************************************************************
-app_version = '27.03.2025-002'
+app_version = '27.03.2025-003'
 
 import os, sys, time
 import subprocess
@@ -23,6 +23,7 @@ import requests
 import json
 import base64
 import serial
+import copy
 
 import assets.mLRS_metadata as mlrs_md
 
@@ -493,12 +494,10 @@ g_repository_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/'
 # url to main branch
 g_main_branch_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
 
-
-
-import copy
+# cache for github downloads
 g_jsonCacheDict = {}
 
-def requestJsonDict(url, error_msg=''):
+def requestJsonDict(url, extension='', error_msg=''):
     if url in g_jsonCacheDict.keys():
         print('* cached', url)
         return copy.deepcopy(g_jsonCacheDict[url])
@@ -507,7 +506,7 @@ def requestJsonDict(url, error_msg=''):
     tries = 4
     while tries > 0:
         try:
-            res = requests.get(url, allow_redirects=True, timeout=(2,4))
+            res = requests.get(url + extension, allow_redirects=True, timeout=(2,4))
             if b'API rate limit exceeded' in res.content:
                 print(res.content)
                 print('DONWLOAD FAILED!')
@@ -562,7 +561,7 @@ def downloadVersionsDict():
     # download mlrs_firmware_urls.json
     # it holds the "released" versions, i.e., all non-dev versions
     # url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/tools/web/mlrs_firmware_urls.json'
-    res = requestJsonDict(g_firmware_json_url, 'ERROR: downloadVersionsDict() [1]')
+    res = requestJsonDict(g_firmware_json_url, '', 'ERROR: downloadVersionsDict() [1]')
     if not res:
         return res
     resDict = res
@@ -582,13 +581,13 @@ def downloadVersionsDict():
             resDict[key]['versionStr'] = key + ' (?)' # should not happen, play it safe
 
         # url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/' + resDict[key]['commit'] + '?recursive=true'
-        resDict[key]['gitUrl'] = g_repository_url + resDict[key]['commit'] + '?recursive=true'
+        resDict[key]['gitUrl'] = g_repository_url + resDict[key]['commit']
 
     # Figure out also the pre-release dev version. This needs work:
     # We need to read the main json, to get the current firmware folder url,
     # then read one file name in this folder, and extract the version part from the file name.
     # url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
-    res = requestJsonDict(g_main_branch_url, 'ERROR: downloadVersionsDict() [2]')
+    res = requestJsonDict(g_main_branch_url, '', 'ERROR: downloadVersionsDict() [2]')
     if not res:
         return res
     resMainList = res['tree'] # it's a list of dictionaries
@@ -603,8 +602,8 @@ def downloadVersionsDict():
         return resDict
     #print(firmwarePathDict)
 
-    url_main_firmware = firmwarePathDict['url'] + '?recursive=true' # not so many, so we can afford getting them all
-    res = requestJsonDict(url_main_firmware, 'ERROR: downloadVersionsDict() [3]')
+    url_main_firmware = firmwarePathDict['url'] # not so many, so we can afford getting them all
+    res = requestJsonDict(url_main_firmware, '?recursive=true', 'ERROR: downloadVersionsDict() [3]')
     if not res:
         return res
     resMainFirmwareList = res['tree'] # it's a list of dictionaries
@@ -637,7 +636,7 @@ def downloadVersionsDict():
 # pass in a GitHub tree URL like https://api.github.com/repos/olliw42/mLRS/git/trees/f12d680?recursive=true
 # this is needed to get the list of files from the location which is specific to the version
 def downloadFilesListFromTree(txrxlua, url, device='', version=''):
-    res = requestJsonDict(url, 'ERROR: downloadFilesListFromTree() [1]')
+    res = requestJsonDict(url, '?recursive=true', 'ERROR: downloadFilesListFromTree() [1]')
     if not res:
         return None
     resList = res['tree'] # it's a list of dictionaries
