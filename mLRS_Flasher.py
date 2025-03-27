@@ -494,7 +494,14 @@ g_repository_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/'
 g_main_branch_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
 
 
+
+import copy
+g_jsonCacheDict = {}
+
 def requestJsonDict(url, error_msg=''):
+    if url in g_jsonCacheDict.keys():
+        print('* cached', url)
+        return copy.deepcopy(g_jsonCacheDict[url])
     print('* request', url)
     res = None
     tries = 4
@@ -514,6 +521,8 @@ def requestJsonDict(url, error_msg=''):
                 if res: print(res.content)
                 print(error_msg)
                 return None
+    
+    g_jsonCacheDict[url] = copy.deepcopy(jsonDict)
     return jsonDict
 
 
