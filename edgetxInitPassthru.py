@@ -115,8 +115,9 @@ def open_passthrough(comport = None, baudrate = 115200, wirelessbridge = None):
         if not res:
             do_error('Sorry, something went wrong.')
 
+    # EdgeTx version <= 2.10 responds with 'bootpin set', on >= 2.11 the response is 'bootcmd set' 
     if not wirelessbridge:
-        res = execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
+        res = execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'boot')
         if not res:
             do_error('Sorry, something went wrong.')
         time.sleep(.1)
@@ -130,11 +131,11 @@ def open_passthrough(comport = None, baudrate = 115200, wirelessbridge = None):
         do_error('Sorry, something went wrong.')
     time.sleep(1)
 
-    res = execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'bootpin set')
+    res = execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'boot')
     if not res:
         do_error('Sorry, something went wrong.')
     time.sleep(1)
-    res = execute_cli_command(ser, b'set rfmod 0 bootpin 0', expected = b'bootpin reset')
+    res = execute_cli_command(ser, b'set rfmod 0 bootpin 0', expected = b'boot')
     if not res:
         do_error('Sorry, something went wrong.')
 
