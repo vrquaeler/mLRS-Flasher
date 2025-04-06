@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 1. Apr. 2025
+# 6. Apr. 2025
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
@@ -34,11 +34,20 @@ mavutil.set_dialect("all")
 
 def find_ardupilot_serial_ports():
     '''
-    ArduPilot's USB port is known to have vid == 0x1209, pid = 0x5740
-    It usually offers at least two, one SLCAN and one MAVLink
+    https://ardupilot.org/dev/docs/USB-IDs.html
+    ArduPilot's USB port has vid == 0x1209, pid = 0x5740 (composite) or 0x5471 (single)
+    Boards which support composite offer two COM ports, (typically) one SLCAN and one MAVLink
     on Win:
-        description = ArduPilot SLCAN (COMxx) or ArduPilot MAVlink (COMxx)
+        description = ArduPilot SLCAN (COMxx) or ArduPilot MAVLink (COMxx)
+        VID:PID = x1209:x5740
         manufacturer = ArduPilot Project
+        product = None
+    on Lin:
+        name = cu.usbmodem21201/3
+        description = speedybeef4v3, BlitzWingH743, and so on
+        VID:PID = x1209:x5740/1
+        manufacturer = ArduPilot
+        product = speedybeef4v3, BlitzWingH743, and so on
     '''
     try:
         from serial.tools.list_ports import comports
@@ -61,9 +70,23 @@ def find_ardupilot_serial_ports():
     '''
     apportList = []
     for port in portList:
-        if port.vid == 0x1209 and (port.pid == 0x5740 or port.pid == 0x5741):
-            if 'ardupilot' in port.manufacturer.lower():
+        if 'ardupilot' in port.manufacturer.lower(): # seems to be so for all boards and OSses
+            # composite USB
+            if ((port.vid == 0x1209 and port.pid == 0x5740) or
+                (port.vid == 0x2DAE and (port.pid == 0x1016 or port.pid == 0x1012)) or # Hex Cube Orange, Yellow
+                (port.vid == 0x1209 and port.pid == 0x004B)): # Holybro Durandal
+                # AP creates two COM ports, reject if it is for SLCAN
+                if 'slcan' in port.description.lower(): # for Win
+                    continue
+                if '21203' in port.name.lower(): # for Lin
+                    continue
                 apportList.append(port.device)
+            # single USB
+            elif ((port.vid == 0x1209 and port.pid == 0x5741) or # AP standard VID/PID
+                  (port.vid == 0x2DAE) or # Hex Cube
+                  (port.vid == 0x3612)): # Holybro
+                apportList.append(port.device)
+    # TODO: on Lin/Mac we may have to clean up the list to reject composite USB
     #print(apportList)
     return apportList
 
@@ -82,6 +105,7 @@ def do_error(msg):
 
 #find_ardupilot_serial_ports()
 #exit()
+
 
 #--------------------------------------------------
 #-- Connect to ArduPilot flight controller via MAVLink
@@ -180,7 +204,7 @@ def ardupilot_open_passthrough(link, serialx, passthru_timeout=0):
     time.sleep(1.5) # wait for passthrough to start, AP starts pt after 1 secs, which is so to allow the PARAM_SET to be seen
     print('serial passthrough opened')
 
-    
+
 def ardupilot_set_scripting(link, serialx):
     print('set scripting...')
 
@@ -362,7 +386,7 @@ if __name__ == '__main__':
         options.append('nosysboot')
     if args.scripting:
         options.append('scripting')
-    
+
     apport, receiver_baud = mlrs_open_passthrough(comport, baudrate, serialx, options)
     print('APPORT='+apport+';APBAUDRATE='+str(receiver_baud)+';', file=sys.stderr)
     sys.exit(-receiver_baud) # report back SERIALx baudrate, for use in batch file
