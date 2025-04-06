@@ -9,6 +9,7 @@ win_build/*
 win_dist/*
 tools/win_build/*
 tools/win_dist/*
+tools/venv/*
 
 # Prerequisites
 *.d
