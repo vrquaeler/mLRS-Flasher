@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 30. Mar. 2025 001
+# 6. Apr. 2025 002
 #************************************************************
-app_version = '30.03.2025-001'
+app_version = '6.04.2025-002'
 
 import os, sys, time
 import subprocess
@@ -54,11 +54,13 @@ def os_system(arg, allow_neg_res=False, pause=True):
 
 def os_system_run_as_bat():
     #return False
+    #return True
     if os.name == 'posix': return False
     return True
 
 def os_system_is_frozen_app():
     #return False
+    #return True
     return getattr(sys, 'frozen', False)
 
 def find_serial_ports():
