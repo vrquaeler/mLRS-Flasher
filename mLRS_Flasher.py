@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 6. Apr. 2025 004
+# 6. Apr. 2025 005
 #************************************************************
-app_version = '6.04.2025-004'
+app_version = '6.04.2025-005'
 
 import os, sys, time
 import argparse
@@ -141,7 +141,7 @@ def flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware):
     F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
     F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE%'+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@%SystemRoot%\System32\timeout.exe /t 5 /nobreak'+'\n')
+    F.write('@%SystemRoot%/System32/timeout.exe /t 5 /nobreak'+'\n')
     F.write(ST_Programmer + ' -c port="COM%PORT%" br=%BAUDRATE% -w "' + firmware +'" -v -g\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** DONE ***'+'\n')
@@ -337,7 +337,7 @@ def flash_esptool_appassthru_win_as_bat(programmer, serialx_no, firmware):
     F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
     F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE% -nosysboot -scripting'+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@%SystemRoot%\System32\timeout.exe /t 5 /nobreak'+'\n')
+    F.write('@%SystemRoot%/System32/timeout.exe /t 5 /nobreak'+'\n')
     esptool_args = flash_esptool_argstr(programmer, firmware, 'COM%PORT%', '%BAUDRATE%')
     F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
     F.write('@ECHO.'+'\n')
