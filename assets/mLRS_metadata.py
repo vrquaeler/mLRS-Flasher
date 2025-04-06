@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Meta Data for mLRS Flasher Desktop App
-# 27. Mar. 2025 001
+# 6. Apr. 2025 001
 #************************************************************
 
 
@@ -87,22 +87,22 @@ g_targetDict = {
             "\nWireless bridge: HC04, cannot be flashed\n",
     },
     'tx-R9' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
+        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
     },
     'tx-E77-MBLKit' : {
-        'flashmethod' : 'stlink',
+        #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
     'tx-Wio-E5' : {
-        'flashmethod' : 'stlink',
+        #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
     'tx-easysolder' : {
-        'flashmethod' : 'stlink',
+        #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
     'tx-FRM303' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
+        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
     },
 
     # esp32 tx module defaults
@@ -169,10 +169,10 @@ g_targetDict = {
         'description' :
             "Supported radios: T20 V2, T15, T14, T-Pro S\n" +
             "Flash method: radio passthrough\n" +
-            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+            "  - with radio powered up, connect to USB of your radio\n" + "  - select 'USB Serial (VCP)'\n" +
             "\nWireless bridge: ESP8285\n" +
             "For flashing the wireless bridge:\n" +
-            "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
+            "  - with radio powered up, connect to USB of your radio\n" + "  - select 'USB Serial (VCP)'\n",
         'wireless' : {
             'chipset' : 'esp8266',
             'baud' : 115200,
@@ -210,26 +210,26 @@ g_targetDict = {
         },
     },
     'rx-R9' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
+        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
         'rx-R9MX-l433cb': {
             'flashmethod' : 'stlink,appassthru',
             'description' : description_stm32_stlink_default + description_ap_passthru_default,
         }
     },
     'rx-E77-MBLKit' : {
-        'flashmethod' : 'stlink',
+        #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
     'rx-Wio-E5' : {
-        'flashmethod' : 'stlink',
+        #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
     'rx-easysolder' : {
-        'flashmethod' : 'stlink',
+        #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
     'rx-FRM303' : {
-        'description' : "mLRS Flasher currently only supports STLink.\nPlease see docs for details.\n",
+        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
     },
 
     # esp defaults:
