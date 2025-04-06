@@ -23,10 +23,11 @@ a = Analysis(
         (path + 'edgetxInitPassthru.py' , '.'),
         (path + 'apInitPassthru.py' , '.'),
         (path + 'thirdparty/STM32CubeProgrammer/win' , 'thirdparty/STM32CubeProgrammer/win'),
-        # pyinstaller seems to be stupid
-        ('venv' , 'venv'),
-        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\python.exe' , 'venv/Scripts'),
-        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\pythonw.exe' , 'venv/Scripts'),
+        # https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
+        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter'),
+        ],
+   hiddenimports=[
+        'pyserial', # it seems pyinstaller cannot handle the fact that the module is pyserial but the import is serial
         ],
     hookspath=[],
     hooksconfig={},
@@ -58,8 +59,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    #console=True, # using False would be nice and possible, but we then need to improve the calling of external programs a bit more
-    console=False,
+    console=True, # using False would be nice and possible, but we then need to improve the calling of external programs a bit more
+    #console=False,
     icon = path + 'assets/mLRS_logo_round.ico', # doesn't work for some reason
     disable_windowed_traceback=False,
     argv_emulation=False,
