@@ -23,7 +23,7 @@ def setup_virtualenv():
     # Create virtual environment
     print("1. Setting up the virtual environment")
     print("...")
-    subprocess.run(["python", "-m", "venv", "venv"], check=True)
+    subprocess.run(["python", "-m", "venv", "venv", "--copies"], check=True)
     print("virtual environment created")
     
     print('------------------------------------------------------------')
