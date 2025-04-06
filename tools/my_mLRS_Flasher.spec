@@ -23,9 +23,11 @@ a = Analysis(
         (path + 'edgetxInitPassthru.py' , '.'),
         (path + 'apInitPassthru.py' , '.'),
         (path + 'thirdparty/STM32CubeProgrammer/win' , 'thirdparty/STM32CubeProgrammer/win'),
-        # important: pyinstaller ssems to not be able to include CustomTkInter
+        # important: pyinstaller seems to not be able to include CustomTkInter
         # https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
-        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter')
+        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter'),
+        # pyinstaller seems to be stupid
+        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\serial' , 'serial'),
         ],
     hiddenimports=[
         'pyserial', # it seems pyinstaller cannot handle the fact that the module is pyserial but the import is serial
