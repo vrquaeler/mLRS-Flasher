@@ -214,7 +214,7 @@ def ardupilot_set_scripting(link, serialx):
     mavparm.MAVParmDict().mavset(link, param_str, 28)
     time.sleep(0.5) # wait a bit
     link.close()
-    do_msg('Please unplug USB and hold receiver boot button down while plugging in USB.\r\nWait until USB is re-enumerated and flight controller has booted up.')
+    do_msg('\r\nPlease unplug USB and hold receiver boot button down while plugging in USB.\r\nWait until USB is re-enumerated and flight controller has booted up.')
 
 
 #--------------------------------------------------

@@ -103,7 +103,6 @@ def _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
 def flash_stm32cubeprogrammer_win_as_bat(programmer, firmware):
     ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
     args = _flash_stm32cubeprogrammer_argstr(programmer, firmware, None, None)
-    #temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
     F.write(ST_Programmer + ' ' + args +'\n')
     F.write('@ECHO.'+'\n')
@@ -393,7 +392,7 @@ Internal Tx Module Flashing Tools
 --------------------------------------------------
 '''
 
-def flash_internal_elrs_tx_module_win(firmware, wirelessbridge=False):
+def flash_internal_elrs_tx_module_win_as_bat(firmware, wirelessbridge=False):
     temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     if wirelessbridge:
         baudrate = 115200
@@ -410,27 +409,27 @@ def flash_internal_elrs_tx_module_win(firmware, wirelessbridge=False):
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** 3. Flashing the internal Tx Module ***'+'\n')
     F.write('@ECHO.'+'\n')
-    F.write('@ECHO The firmware to flash is: '+firmware+'\n')
-    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n')
+    F.write('@ECHO The firmware to flash is: ' + firmware + '\n')
+    F.write('@' + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO Please remove the USB cable.'+'\n')
     F.write('@ECHO Cheers, and have fun.'+'\n')
-###    F.write('@pause'+'\n')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n')
+    if os_system_is_frozen_app():
+        F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat', pause=False)
 
-#flash_internal_elrs_tx_module_win('tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
+#flash_internal_elrs_tx_module_win_as_bat('tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
 #exit(1)
 
 
 def flashInternalElrsTxModule(programmer, firmware):
     if os_system_run_as_bat():
         print('Run on Windows as batch file')
-        flash_internal_elrs_tx_module_win(firmware, wirelessbridge = False)
-        return
+        flash_internal_elrs_tx_module_win_as_bat(firmware, wirelessbridge = False)
+        return # done
 
     # firmware filename gives the complete path
     #print(filename)
@@ -457,8 +456,8 @@ def flashInternalElrsTxModule(programmer, firmware):
 def flashInternalElrsTxModuleWirelessBridge(programmer, firmware):
     if os_system_run_as_bat():
         print('Run on Windows as batch file')
-        flash_internal_elrs_tx_module_win(firmware, wirelessbridge = True)
-        return
+        flash_internal_elrs_tx_module_win_as_bat(firmware, wirelessbridge = True)
+        return # done
 
     #print(programmer)
     baudrate = 115200
