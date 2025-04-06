@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 6. Apr. 2025 002
+# 6. Apr. 2025 003
 #************************************************************
-app_version = '6.04.2025-002'
+app_version = '6.04.2025-003'
 
 import os, sys, time
 import subprocess
@@ -100,9 +100,9 @@ def _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
     return args
 
 
-def flash_stm32cubeprogrammer_win_as_bat(programmer, firmware):
+def flash_stm32cubeprogrammer_win_as_bat(programmer, firmware, comport, baudrate):
     ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
-    args = _flash_stm32cubeprogrammer_argstr(programmer, firmware, None, None)
+    args = _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate)
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
     F.write(ST_Programmer + ' ' + args +'\n')
     F.write('@ECHO.'+'\n')
@@ -157,7 +157,7 @@ def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
     flash_stm32cubeprogrammer('uart', firmware, comport, baudrate)
 
 
-def flashSTM32CubeProgrammer(programmer, firmware):
+def flashSTM32CubeProgrammer(programmer, firmware, comport, baudrate):
     #print('flashSTM32CubeProgrammer()',programmer)
     serialx_no = None
     f = re.search(r' serial([0-9]+?)', programmer.lower())
@@ -169,13 +169,13 @@ def flashSTM32CubeProgrammer(programmer, firmware):
         if 'appassthru' in programmer:
             flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware)
         else:
-            flash_stm32cubeprogrammer_win_as_bat(programmer, firmware)
+            flash_stm32cubeprogrammer_win_as_bat(programmer, firmware, comport, baudrate)
         return # done
 
     if 'appassthru' in programmer:
         flash_stm32cubeprogrammer_appassthru(serialx_no, firmware)
     else:
-        flash_stm32cubeprogrammer(programmer, firmware, None, None)
+        flash_stm32cubeprogrammer(programmer, firmware, comport, baudrate)
     print()
     print('*** DONE ***')
     print()
@@ -183,6 +183,7 @@ def flashSTM32CubeProgrammer(programmer, firmware):
 
 
 #flashSTM32CubeProgrammer('stm32 stlink', 'temp/rx-R9MX-l433cb-v1.3.05-@28fe6be0.hex')
+#flashSTM32CubeProgrammer('stm32 uart', 'temp/rx-matek-mr900-22-wle5cc-v1.3.05-@9fb56cb8.hex', 'COM23', 115200)
 #flashSTM32CubeProgrammer('stm32 appassthru serial2', 'temp/rx-R9MX-l433cb-v1.3.05-@28fe6be0.hex')
 #exit(1)
 
@@ -737,7 +738,7 @@ def flashDevice(programmer, url, filename, comport=None, baudrate=None):
                 return
     elif 'stm32' in programmer:
         # STM32
-        flashSTM32CubeProgrammer(programmer, filepath)
+        flashSTM32CubeProgrammer(programmer, filepath, comport, baudrate)
         return
     elif 'esp' in programmer: # 'esp32'
         # ESP
@@ -1069,6 +1070,10 @@ class App(ctk.CTk):
                     elif 'appassthru' in flashmethod:
                         serialx = self.fReceiver_Serialx_menu.get().lower()
                         flashDevice('stm32 appassthru '+serialx, key['url'], firmware_filename)
+                    elif 'uart' in flashmethod:
+                        comport = self.fReceiver_ComPort_menu.get()
+                        print('--->',comport)
+                        flashDevice('stm32 uart', key['url'], firmware_filename, comport=comport, baudrate=115200)
                     else:
                         flashDevice('stm32 stlink', key['url'], firmware_filename) # STLink is default
                     return
@@ -1257,6 +1262,7 @@ class App(ctk.CTk):
         for flashmethod in flashmethod_list:
             if flashmethod == 'dfu': menu_list.append('DFU (USB)')
             if flashmethod == 'stlink': menu_list.append('STLink (SWD)')
+            if flashmethod == 'uart': menu_list.append('SystemBoot (UART)')
             if flashmethod == 'esptool': menu_list.append('ESPTool (UART)')
             if flashmethod == 'appassthru': menu_list.append('AP Passthru')
         if len(menu_list) == 0: menu_list.append('failed')
@@ -1265,6 +1271,7 @@ class App(ctk.CTk):
     def get_flashmethod_from_menu_opt(self, menu_opt):
         if 'DFU' in menu_opt: return 'dfu'
         if 'STLink' in menu_opt: return 'stlink'
+        if 'SystemBoot' in menu_opt: return 'uart'
         if 'ESPTool' in menu_opt: return 'esptool'
         if 'AP Passthru' in menu_opt: return 'appassthru'
         return 'default'
@@ -1691,6 +1698,9 @@ class App(ctk.CTk):
             self.fReceiver_ComPort_menu.grid_remove()
             self.fReceiver_Serialx_menu.grid()
         elif sel_flashmethod == 'esptool':
+            self.fReceiver_ComPort_menu.grid()
+            self.fReceiver_Serialx_menu.grid_remove()
+        elif sel_flashmethod == 'uart':
             self.fReceiver_ComPort_menu.grid()
             self.fReceiver_Serialx_menu.grid_remove()
         else:

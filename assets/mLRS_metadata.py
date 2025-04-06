@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Meta Data for mLRS Flasher Desktop App
-# 6. Apr. 2025 001
+# 6. Apr. 2025 002
 #************************************************************
 
 
@@ -60,6 +60,13 @@ description_stm32_dfu_default = (
 description_stm32_stlink_default = (
     "Flash method: STLink\n" +
     "  - connect SWD pads to STLink\n"
+    )
+
+description_stm32_uart_default = (
+    "Flash method: UART\n" +
+    "  - connect Tx,Rx pads to USB-TTL adapter\n" +
+    "  - select COM port\n" +
+    "  - power up receiver while pressing the button\n"
     )
 
 description_esp_esptool_uart_default = (
@@ -205,8 +212,8 @@ g_targetDict = {
         'flashmethod' : 'dfu,appassthru',
         'description' : description_stm32_dfu_default + description_ap_passthru_default,
         'rx-matek-mr900-22' : {
-            'flashmethod' : 'stlink,appassthru',
-            'description' : description_stm32_stlink_default + description_ap_passthru_default,
+            'flashmethod' : 'stlink,uart,appassthru',
+            'description' : description_stm32_stlink_default + description_stm32_uart_default + description_ap_passthru_default,
         },
     },
     'rx-R9' : {
