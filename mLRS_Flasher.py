@@ -209,7 +209,7 @@ def find_serial_ports_esp_tx_devices():
             continue
         if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx
             continue
-        if port.vid == 0x1209 and port.pid == 0x5740: # this is ArduPilot
+        if port.vid == 0x1209 and (port.pid == 0x5740 or port.pid == 0x5741): # this is ArduPilot
             continue
         if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
             continue
@@ -232,7 +232,7 @@ def find_serial_ports_usbttl_devices():
             continue
         if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx
             continue
-        if port.vid == 0x1209 and port.pid == 0x5740: # this is ArduPilot
+        if port.vid == 0x1209 and (port.pid == 0x5740 or port.pid == 0x5741): # this is ArduPilot
             continue
         deviceportList.append(port.device)
     return deviceportList
