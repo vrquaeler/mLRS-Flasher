@@ -87,7 +87,8 @@ STM32 Flashing Tools
 --------------------------------------------------
 '''
 
-def flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
+# helper
+def _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
     if 'dfu' in programmer:
         args = '-c port=usb1 -w "'+firmware+'" -v -g'
     elif 'uart' in programmer:
@@ -97,9 +98,9 @@ def flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
     return args
 
 
-def flash_stm32cubeprogrammer_win(programmer, firmware):
+def flash_stm32cubeprogrammer_win_as_bat(programmer, firmware):
     ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
-    args = flash_stm32cubeprogrammer_argstr(programmer, firmware)
+    args = _flash_stm32cubeprogrammer_argstr(programmer, firmware, None, None)
     #temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
     F.write(ST_Programmer + ' ' + args +'\n')
@@ -120,11 +121,11 @@ def flash_stm32cubeprogrammer(programmer, firmware, comport, baudrate):
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','linux','bin','STM32_Programmer_CLI')
     else:
         ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
-    args = flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate)
+    args = _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate)
     os_system(ST_Programmer + ' ' + args)
 
 
-def flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware):
+def flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware):
     ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
     F.write('@apInitPassthru.py -findport'+'\n')
@@ -164,10 +165,10 @@ def flashSTM32CubeProgrammer(programmer, firmware):
     if os_system_run_as_bat():
         print('Run on Windows as batch file')
         if 'appassthru' in programmer:
-            flash_stm32cubeprogrammer_appassthru_win(serialx_no, firmware)
+            flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware)
         else:
-            flash_stm32cubeprogrammer_win(programmer, firmware)
-        return
+            flash_stm32cubeprogrammer_win_as_bat(programmer, firmware)
+        return # done
 
     if 'appassthru' in programmer:
         flash_stm32cubeprogrammer_appassthru(serialx_no, firmware)
