@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 6. Apr. 2025 005
+# 6. Apr. 2025 006
 #************************************************************
-app_version = '6.04.2025-005'
+app_version = '6.04.2025-006'
 
 import os, sys, time
 import argparse
@@ -132,16 +132,19 @@ def flash_stm32cubeprogrammer(programmer, firmware, comport, baudrate):
 
 def flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware):
     ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
+    python_exe = ''
+    if os_system_is_frozen_app():
+        python_exe = os.path.join('venv','Scripts','python.exe') + ' '
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@apInitPassthru.py -findport'+'\n')
+    F.write('@' + python_exe + 'apInitPassthru.py -findport'+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
     F.write('@if %ERRORLEVEL% LEQ 0 set /a PORT=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
+    F.write('@' + python_exe + 'apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
     F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE%'+'\n')
+    F.write('@' + python_exe + 'apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE%'+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@%SystemRoot%/System32/timeout.exe /t 5 /nobreak'+'\n')
+    F.write('@' + os.path.join('%SystemRoot%','System32','timeout.exe') + ' /t 5 /nobreak'+'\n')
     F.write(ST_Programmer + ' -c port="COM%PORT%" br=%BAUDRATE% -w "' + firmware +'" -v -g\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** DONE ***'+'\n')
@@ -308,8 +311,11 @@ def flash_esptool_argstr(programmer, firmware, comport, baudrate):
 
 def flash_esptool_win_as_bat(programmer, firmware, comport, baudrate):
     esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
+    python_exe = ''
+    if os_system_is_frozen_app():
+        python_exe = os.path.join('venv','Scripts','python.exe') + ' '
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@' + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
+    F.write('@' + python_exe + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
@@ -328,18 +334,21 @@ def flash_esptool(programmer, firmware, comport, baudrate):
 
 
 def flash_esptool_appassthru_win_as_bat(programmer, serialx_no, firmware):
+    python_exe = ''
+    if os_system_is_frozen_app():
+        python_exe = os.path.join('venv','Scripts','python.exe') + ' '
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@apInitPassthru.py -findport'+'\n')
+    F.write('@' + python_exe + 'apInitPassthru.py -findport'+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
     F.write('@if %ERRORLEVEL% LEQ 0 set /a PORT=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
+    F.write('@' + python_exe + 'apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
     F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE% -nosysboot -scripting'+'\n')
+    F.write('@' + python_exe + 'apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE% -nosysboot -scripting'+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@%SystemRoot%/System32/timeout.exe /t 5 /nobreak'+'\n')
+    F.write('@' + os.path.join('%SystemRoot%','System32','timeout.exe') + ' /t 5 /nobreak'+'\n')
     esptool_args = flash_esptool_argstr(programmer, firmware, 'COM%PORT%', '%BAUDRATE%')
-    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
+    F.write('@' + python_exe + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
@@ -407,15 +416,18 @@ def flash_internal_elrs_tx_module_win_as_bat(firmware, wirelessbridge=False):
         baudrate = 921600
         passthru_args = '-b '+str(baudrate)
         esptool_args = flash_esptool_argstr('esp32', os.path.join(temp_path, firmware), 'COM%RADIOPORT%', baudrate)
+    python_exe = ''    
+    if os_system_is_frozen_app():
+        python_exe = os.path.join('venv','Scripts','python.exe') + ' '
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@edgetxInitPassthru.py ' + passthru_args +'\n')
+    F.write('@' + python_exe + 'edgetxInitPassthru.py ' + passthru_args +'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
     F.write('@if %ERRORLEVEL% LEQ 0 set /a RADIOPORT=-%ERRORLEVEL%'+'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** 3. Flashing the internal Tx Module ***'+'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO The firmware to flash is: ' + firmware + '\n')
-    F.write('@' + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n')
+    F.write('@' + python_exe + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
