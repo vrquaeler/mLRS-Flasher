@@ -110,8 +110,8 @@ def flash_stm32cubeprogrammer_win_as_bat(programmer, firmware):
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO Cheers, and have fun.'+'\n')
-###    F.write('@pause'+'\n')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n')
+    if os_system_is_frozen_app():
+        F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat', pause=False)
 
@@ -144,7 +144,8 @@ def flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware):
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO Cheers, and have fun.'+'\n')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n')
+    if os_system_is_frozen_app():
+        F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
 
@@ -301,17 +302,16 @@ def flash_esptool_argstr(programmer, firmware, comport, baudrate):
     return args
 
 
-def flash_esptool_win(programmer, firmware, comport, baudrate):
+def flash_esptool_win_as_bat(programmer, firmware, comport, baudrate):
     esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
-
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@'+os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
+    F.write('@' + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO Cheers, and have fun.'+'\n')
-###    F.write('@pause'+'\n')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n')
+    if os_system_is_frozen_app():
+        F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat', pause=False)
 
@@ -319,12 +319,11 @@ def flash_esptool_win(programmer, firmware, comport, baudrate):
 def flash_esptool(programmer, firmware, comport, baudrate):
     esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
     #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
-
     # TODO: can we catch if this was succesful?
     os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args)
 
 
-def flash_esptool_appassthru_win(programmer, serialx_no, firmware):
+def flash_esptool_appassthru_win_as_bat(programmer, serialx_no, firmware):
     F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
     F.write('@apInitPassthru.py -findport'+'\n')
     F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
@@ -341,7 +340,8 @@ def flash_esptool_appassthru_win(programmer, serialx_no, firmware):
     F.write('@ECHO *** DONE ***'+'\n')
     F.write('@ECHO.'+'\n')
     F.write('@ECHO Cheers, and have fun.'+'\n')
-    if os_system_is_frozen_app(): F.write('@pause'+'\n')
+    if os_system_is_frozen_app():
+        F.write('@pause'+'\n')
     F.close()
     os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
 
@@ -364,10 +364,10 @@ def flashEspToolProgrammer(programmer, firmware, comport, baudrate):
     if os_system_run_as_bat():
         print('Run on Windows as batch file')
         if 'appassthru' in programmer:
-            flash_esptool_appassthru_win(programmer, serialx_no, firmware)
+            flash_esptool_appassthru_win_as_bat(programmer, serialx_no, firmware)
         else:
-            flash_esptool_win(programmer, firmware, comport, baudrate)
-        return
+            flash_esptool_win_as_bat(programmer, firmware, comport, baudrate)
+        return # done
 
     temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     if 'appassthru' in programmer:
@@ -524,7 +524,7 @@ def requestJsonDict(url, extension='', error_msg=''):
                 if res: print(res.content)
                 print(error_msg)
                 return None
-    
+
     g_jsonCacheDict[url] = copy.deepcopy(jsonDict)
     return jsonDict
 
@@ -545,7 +545,7 @@ def requestData(url, error_msg=''):
                 jsonDict = res.json()
             except:
                 data = res.content
-            break # got it    
+            break # got it
         except:
             tries = tries - 1
             if tries < 0:
@@ -816,10 +816,10 @@ class CTkInfoTextbox(ctk.CTkTextbox):
         if tag:
             super().tag_add(tag[0], tag[1], tag[2])
         super().configure(state="disabled")
-        
+
 
 warning_dev_version = (
-    "WARNING: You are about to flash a 'dev' firmware version.\n" + 
+    "WARNING: You are about to flash a 'dev' firmware version.\n" +
     "Please ensure you understand the risks involved with this.\n\n"
     )
 warning_dev_version_tag = ['warning','1.0','2.100']
