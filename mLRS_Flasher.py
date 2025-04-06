@@ -6,11 +6,12 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 6. Apr. 2025 003
+# 6. Apr. 2025 004
 #************************************************************
-app_version = '6.04.2025-003'
+app_version = '6.04.2025-004'
 
 import os, sys, time
+import argparse
 import subprocess
 import re
 
@@ -58,9 +59,12 @@ def os_system_run_as_bat():
     if os.name == 'posix': return False
     return True
 
+is_frozen_app = False
+
 def os_system_is_frozen_app():
     #return False
     #return True
+    if is_frozen_app: return True
     return getattr(sys, 'frozen', False)
 
 def find_serial_ports():
@@ -1933,6 +1937,14 @@ class App(ctk.CTk):
 #--------------------------------------------------
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description = 'mLRS-Flasher'
+        )
+    parser.add_argument("-frozen", action='store_true', help = 'Freeze')
+    args = parser.parse_args()
+    if args.frozen:
+        is_frozen_app = True
+
     app = App()
     app.update()
     app.after(10,app.after_startup())

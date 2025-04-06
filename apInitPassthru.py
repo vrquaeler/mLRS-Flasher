@@ -357,7 +357,7 @@ def mlrs_open_passthrough(comport, baudrate, serialx, options=[]):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description = 'ArduPilot passthrough to mLRS receiver'
+        description = 'Initialize ArduPilot passthrough to mLRS receiver'
         )
     parser.add_argument("-c", "--com", help="Com port corresponding to flight controller USB port. Examples: com5, /dev/ttyACM0")
     parser.add_argument("-b", "--baud", type=int, default=57600, help="Baudrate of fligh controller")

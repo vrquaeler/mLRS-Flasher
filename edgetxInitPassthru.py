@@ -9,7 +9,8 @@
 #************************************************************
 
 import os, sys, time
-import serial, argparse
+import argparse
+import serial
 
 
 #--------------------------------------------------
