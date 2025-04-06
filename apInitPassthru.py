@@ -70,15 +70,13 @@ def find_ardupilot_serial_ports():
     '''
     apportList = []
     for port in portList:
-        if 'ardupilot' in port.manufacturer.lower(): # seems to be so for all boards and OSses
+        if port.manufacturer and 'ardupilot' in port.manufacturer.lower(): # seems to be so for all boards and OSses
             # composite USB
             if ((port.vid == 0x1209 and port.pid == 0x5740) or
                 (port.vid == 0x2DAE and (port.pid == 0x1016 or port.pid == 0x1012)) or # Hex Cube Orange, Yellow
                 (port.vid == 0x1209 and port.pid == 0x004B)): # Holybro Durandal
                 # AP creates two COM ports, reject if it is for SLCAN
-                if 'slcan' in port.description.lower(): # for Win
-                    continue
-                if '21203' in port.name.lower(): # for Lin
+                if 'slcan' in port.description.lower(): # works for Win
                     continue
                 apportList.append(port.device)
             # single USB
@@ -86,7 +84,9 @@ def find_ardupilot_serial_ports():
                   (port.vid == 0x2DAE) or # Hex Cube
                   (port.vid == 0x3612)): # Holybro
                 apportList.append(port.device)
-    # TODO: on Lin/Mac we may have to clean up the list to reject composite USB
+    # TODO: on Lin/Mac we have to clean up the list to reject composite USB
+    if os.name == 'posix':
+        apportList = [apportList[0]] # let's just grab the first and hope for the best
     #print(apportList)
     return apportList
 
