@@ -172,7 +172,7 @@ def flashSTM32CubeProgrammer(programmer, firmware):
     if 'appassthru' in programmer:
         flash_stm32cubeprogrammer_appassthru(serialx_no, firmware)
     else:
-        flash_stm32cubeprogrammer(programmer, firmware)
+        flash_stm32cubeprogrammer(programmer, firmware, None, None)
     print()
     print('*** DONE ***')
     print()
