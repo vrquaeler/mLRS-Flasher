@@ -28,6 +28,8 @@ a = Analysis(
         ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\customtkinter' , 'customtkinter'),
         # pyinstaller seems to be stupid
         ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\lib\site-packages\serial' , 'serial'),
+        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\python.exe' , '.'),
+        ('c:\winpython3-10-5\wpy64-31050\python-3.10.5.amd64\python3.dll' , '.'),
         ],
     hiddenimports=[
         'pyserial', # it seems pyinstaller cannot handle the fact that the module is pyserial but the import is serial
