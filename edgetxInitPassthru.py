@@ -5,7 +5,7 @@
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 #************************************************************
 # Open passthrough to internal Tx module of EdgeTx/OpenTx radios
-# 27. Mar. 2025
+# 1. Apr. 2025
 #************************************************************
 
 import os, sys, time
