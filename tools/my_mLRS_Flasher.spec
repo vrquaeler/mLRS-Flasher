@@ -20,6 +20,7 @@ a = Analysis(
         (path + 'assets' , 'assets'),
         (path + 'thirdparty/esptool' , 'thirdparty/esptool'),
         (path + 'thirdparty/mavlink' , 'thirdparty/mavlink'),
+        (path + appname+'.py' , '.'),
         (path + 'edgetxInitPassthru.py' , '.'),
         (path + 'apInitPassthru.py' , '.'),
         (path + 'thirdparty/STM32CubeProgrammer/win' , 'thirdparty/STM32CubeProgrammer/win'),

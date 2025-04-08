@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 6. Apr. 2025 007
+# 8. Apr. 2025 001
 #************************************************************
-app_version = '6.04.2025-007'
+app_version = '8.04.2025-001'
 
 import os, sys, time
 import subprocess
@@ -26,6 +26,8 @@ import serial
 import copy
 
 import assets.mLRS_metadata as mlrs_md
+import apInitPassthru as appassthru
+import edgetxInitPassthru as radio
 
 
 ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -43,25 +45,15 @@ def create_dir(path):
     if not os.path.exists(path):
         make_dir(path)
 
-# used by flashXXX functions to call flasher
-def os_system(arg, allow_neg_res=False, pause=True):
+def os_system(arg):
     res = os.system(arg)
-    if res > 0 or (not allow_neg_res and res < 0):
-        print('# ERROR (errno =',res,') DONE #')
-        if pause: os.system("pause")
-        #sys.exit(1) # no, we don't need to exit
     return res
 
-def os_system_run_as_bat():
+def os_system_run_as_script():
     return False # TODO: we currently don't do this as it conflicts with pyinstaller
     #return True
     if os.name == 'posix': return False
     return True
-
-def os_system_is_frozen_app():
-    #return False
-    #return True
-    return getattr(sys, 'frozen', False)
 
 def find_serial_ports():
     try:
@@ -79,10 +71,6 @@ def find_serial_ports():
     return deviceportList
 
 
-import apInitPassthru as appassthru
-import edgetxInitPassthru as radio
-
-
 '''
 --------------------------------------------------
 STM32 Flashing Tools
@@ -90,6 +78,11 @@ STM32 Flashing Tools
 '''
 
 # helper
+def _cvtstr(s):
+    if not s: return str(s)
+    return '"' + s.replace('\\','\\\\') + '"'
+
+
 def _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
     if 'dfu' in programmer:
         args = '-c port=usb1 -w "'+firmware+'" -v -g'
@@ -100,19 +93,20 @@ def _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate):
     return args
 
 
-def flash_stm32cubeprogrammer_win_as_bat(programmer, firmware, comport, baudrate):
-    ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
-    args = _flash_stm32cubeprogrammer_argstr(programmer, firmware, comport, baudrate)
-    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write(ST_Programmer + ' ' + args +'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO *** DONE ***'+'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO Cheers, and have fun.'+'\n')
-    if os_system_is_frozen_app():
-        F.write('@pause'+'\n')
+def flash_stm32cubeprogrammer_win_as_script(programmer, firmware, comport, baudrate):
+    F = open(os.path.join('mlrs_flasher_runner.py'), 'w')
+    F.write('import os\n')
+    F.write('from mLRS_Flasher import _flash_stm32cubeprogrammer_argstr\n')
+    F.write("ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')\n")
+    F.write('args = _flash_stm32cubeprogrammer_argstr('+_cvtstr(programmer)+', '+_cvtstr(firmware)+', '+_cvtstr(comport)+', '+str(baudrate)+')\n')
+    F.write('os.system(ST_Programmer + \' \' + args)\n')
+    F.write('print()\n')
+    F.write('print("*** DONE ***")\n')
+    F.write('print()\n')
+    F.write('print("Cheers, and have fun.")\n')
+    F.write('os.system("pause")\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat', pause=False)
+    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 def flash_stm32cubeprogrammer(programmer, firmware, comport, baudrate):
@@ -126,33 +120,30 @@ def flash_stm32cubeprogrammer(programmer, firmware, comport, baudrate):
     os_system(ST_Programmer + ' ' + args)
 
 
-def flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware):
-    ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')
-    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@apInitPassthru.py -findport'+'\n')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@if %ERRORLEVEL% LEQ 0 set /a PORT=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE%'+'\n')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@' + os.path.join('%SystemRoot%','System32','timeout.exe') + ' /t 5 /nobreak'+'\n')
-    F.write(ST_Programmer + ' -c port="COM%PORT%" br=%BAUDRATE% -w "' + firmware +'" -v -g\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO *** DONE ***'+'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO Cheers, and have fun.'+'\n')
-    if os_system_is_frozen_app():
-        F.write('@pause'+'\n')
+def flash_stm32cubeprogrammer_appassthru_win_as_script(serialx_no, firmware):
+    F = open(os.path.join('mlrs_flasher_runner.py'), 'w')
+    F.write('import os, time\n')
+    F.write('from mLRS_Flasher import _flash_stm32cubeprogrammer_argstr\n')
+    F.write('import apInitPassthru as appassthru\n')
+    F.write('comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, ' + str(serialx_no) + ')\n')
+    F.write("print('waiting for 5 secs...')\n")
+    F.write('time.sleep(5.0)\n')
+    F.write("ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')\n")
+    F.write('args = _flash_stm32cubeprogrammer_argstr("uart", '+_cvtstr(firmware)+', comport, baudrate)\n')
+    F.write('os.system(ST_Programmer + \' \' + args)\n')
+    F.write('print()\n')
+    F.write('print("*** DONE ***")\n')
+    F.write('print()\n')
+    F.write('print("Cheers, and have fun.")\n')
+    F.write('os.system("pause")\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
+    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
     comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, serialx_no)
     #TODO: add a way to gracefully jump out in case of an error
-    #print('waiting for 5 secs...')
+    print('waiting for 5 secs...')
     time.sleep(5.0)
     flash_stm32cubeprogrammer('uart', firmware, comport, baudrate)
 
@@ -164,12 +155,12 @@ def flashSTM32CubeProgrammer(programmer, firmware, comport, baudrate):
     if f:
         serialx_no = f.group(1)
 
-    if os_system_run_as_bat():
-        print('Run on Windows as batch file')
+    if os_system_run_as_script():
+        #print('run as script file')
         if 'appassthru' in programmer:
-            flash_stm32cubeprogrammer_appassthru_win_as_bat(serialx_no, firmware)
+            flash_stm32cubeprogrammer_appassthru_win_as_script(serialx_no, firmware)
         else:
-            flash_stm32cubeprogrammer_win_as_bat(programmer, firmware, comport, baudrate)
+            flash_stm32cubeprogrammer_win_as_script(programmer, firmware, comport, baudrate)
         return # done
 
     if 'appassthru' in programmer:
@@ -239,7 +230,7 @@ def find_serial_ports_usbttl_devices():
     return deviceportList
 
 
-def flash_esptool_argstr(programmer, firmware, comport, baudrate):
+def _flash_esptool_argstr(programmer, firmware, comport, baudrate):
     assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
     if 'esp32c3' in programmer: # must come before we test for 'eps32'!
         args = (
@@ -302,57 +293,55 @@ def flash_esptool_argstr(programmer, firmware, comport, baudrate):
     return args
 
 
-def flash_esptool_win_as_bat(programmer, firmware, comport, baudrate):
-    esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
-    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@' + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO *** DONE ***'+'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO Cheers, and have fun.'+'\n')
-    if os_system_is_frozen_app():
-        F.write('@pause'+'\n')
+def flash_esptool_win_as_script(programmer, firmware, comport, baudrate):
+    F = open(os.path.join('mlrs_flasher_runner.py'), 'w')
+    F.write('import os\n')
+    F.write('from mLRS_Flasher import _flash_esptool_argstr\n')
+    F.write("ESP_Programmer = os.path.join('thirdparty','esptool','esptool.py')\n")
+    F.write('args = _flash_esptool_argstr('+_cvtstr(programmer)+', '+_cvtstr(firmware)+', '+_cvtstr(comport)+', '+str(baudrate)+')\n')
+    F.write('os.system(ESP_Programmer + \' \' + args)\n')
+    F.write('print()\n')
+    F.write('print("*** DONE ***")\n')
+    F.write('print()\n')
+    F.write('print("Cheers, and have fun.")\n')
+    F.write('os.system("pause")\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat', pause=False)
+    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 def flash_esptool(programmer, firmware, comport, baudrate):
-    esptool_args = flash_esptool_argstr(programmer, firmware, comport, baudrate)
-    #args = '--port "' + radioport + '" ' + '--baud ' + str(baudrate) + ' ' + 'flash_id'
+    ESP_Programmer = os.path.join('thirdparty','esptool','esptool.py')
+    args = _flash_esptool_argstr(programmer, firmware, comport, baudrate)
     # TODO: can we catch if this was succesful?
-    os_system(os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args)
+    os_system(ESP_Programmer + ' ' + args)
 
 
-def flash_esptool_appassthru_win_as_bat(programmer, serialx_no, firmware):
-    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@apInitPassthru.py -findport'+'\n')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@if %ERRORLEVEL% LEQ 0 set /a PORT=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -findbaud -c "COM%PORT%" -s '+str(serialx_no)+'\n')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@if %ERRORLEVEL% LEQ 0 set /a BAUDRATE=-%ERRORLEVEL%'+'\n')
-    F.write('@apInitPassthru.py -c "COM%PORT%" -s '+str(serialx_no)+' -b %BAUDRATE% -nosysboot -scripting'+'\n')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@' + os.path.join('%SystemRoot%','System32','timeout.exe') + ' /t 5 /nobreak'+'\n')
-    esptool_args = flash_esptool_argstr(programmer, firmware, 'COM%PORT%', '%BAUDRATE%')
-    F.write('@' + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args + '\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO *** DONE ***'+'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO Cheers, and have fun.'+'\n')
-    if os_system_is_frozen_app():
-        F.write('@pause'+'\n')
+def flash_esptool_appassthru_win_as_script(programmer, serialx_no, firmware):
+    F = open(os.path.join('mlrs_flasher_runner.py'), 'w')
+    F.write('import os, time\n')
+    F.write('from mLRS_Flasher import _flash_esptool_argstr\n')
+    F.write('import apInitPassthru as appassthru\n')
+    F.write('comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, ' + str(serialx_no) + ', ["nosysboot", "scripting"])\n')
+    F.write("print('waiting for 5 secs...')\n")
+    F.write('time.sleep(5.0)\n')
+    F.write("ESP_Programmer = os.path.join('thirdparty','esptool','esptool.py')\n")
+    F.write('args = _flash_esptool_argstr('+_cvtstr(programmer)+', '+_cvtstr(firmware)+', comport, baudrate)\n')
+    F.write('os.system(ESP_Programmer + \' \' + args)\n')
+    F.write('print()\n')
+    F.write('print("*** DONE ***")\n')
+    F.write('print()\n')
+    F.write('print("Cheers, and have fun.")\n')
+    F.write('os.system("pause")\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
+    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
 def flash_esptool_appassthru(programmer, serialx_no, firmware):
     comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, serialx_no, ['nosysboot', 'scripting'])
     #TODO: add a way to gracefully jump out in case of an error
-    #print('waiting for 5 secs...')
+    print('waiting for 5 secs...')
     time.sleep(5.0)
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-    flash_esptool(programmer, os.path.join(temp_path, firmware), comport, baudrate)
+    flash_esptool(programmer, firmware, comport, baudrate)
 
 
 def flashEspToolProgrammer(programmer, firmware, comport, baudrate):
@@ -361,19 +350,18 @@ def flashEspToolProgrammer(programmer, firmware, comport, baudrate):
     if f:
         serialx_no = f.group(1)
 
-    if os_system_run_as_bat():
-        print('Run on Windows as batch file')
+    if os_system_run_as_script():
+        #print('run as script file')
         if 'appassthru' in programmer:
-            flash_esptool_appassthru_win_as_bat(programmer, serialx_no, firmware)
+            flash_esptool_appassthru_win_as_script(programmer, serialx_no, firmware)
         else:
-            flash_esptool_win_as_bat(programmer, firmware, comport, baudrate)
+            flash_esptool_win_as_script(programmer, firmware, comport, baudrate)
         return # done
 
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     if 'appassthru' in programmer:
-        flash_esptool_appassthru(programmer, serialx_no, os.path.join(temp_path, firmware))
+        flash_esptool_appassthru(programmer, serialx_no, firmware)
     else:
-        flash_esptool(programmer, os.path.join(temp_path, firmware), comport, baudrate)
+        flash_esptool(programmer, firmware, comport, baudrate)
     print()
     print('*** DONE ***')
     print()
@@ -381,8 +369,6 @@ def flashEspToolProgrammer(programmer, firmware, comport, baudrate):
     print('Cheers, and have fun.')
 
 
-#os_system('mlrs_flasher_runner.bat', allow_neg_res=True, pause=False)
-#exit(1)
 #flashEspToolProgrammer('esp8285 appassthru serial2', 'temp/rx-bayck-nano-pro-900-v1.3.05-@28fe6be0.bin', None, None)
 #exit(1)
 
@@ -393,91 +379,69 @@ Internal Tx Module Flashing Tools
 --------------------------------------------------
 '''
 
-def flash_internal_elrs_tx_module_win_as_bat(firmware, wirelessbridge=False):
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-    if wirelessbridge:
-        baudrate = 115200
-        passthru_args = '-b '+str(baudrate)+' --wirelessbridge'
-        esptool_args = flash_esptool_argstr('esp8266', os.path.join(temp_path, firmware), 'COM%RADIOPORT%', baudrate)
-    else:
-        baudrate = 921600
-        passthru_args = '-b '+str(baudrate)
-        esptool_args = flash_esptool_argstr('esp32', os.path.join(temp_path, firmware), 'COM%RADIOPORT%', baudrate)
-    F = open(os.path.join('mlrs_flasher_runner.bat'), 'w')
-    F.write('@edgetxInitPassthru.py ' + passthru_args +'\n')
-    F.write('@if %ERRORLEVEL% GEQ 1 EXIT /B 1'+'\n')
-    F.write('@if %ERRORLEVEL% LEQ 0 set /a RADIOPORT=-%ERRORLEVEL%'+'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO *** 3. Flashing the internal Tx Module ***'+'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO The firmware to flash is: ' + firmware + '\n')
-    F.write('@' + os.path.join('thirdparty','esptool','esptool.py') + ' ' + esptool_args +'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO *** DONE ***'+'\n')
-    F.write('@ECHO.'+'\n')
-    F.write('@ECHO Please remove the USB cable.'+'\n')
-    F.write('@ECHO Cheers, and have fun.'+'\n')
-    if os_system_is_frozen_app():
-        F.write('@pause'+'\n')
+def flash_internal_elrs_tx_module_win_as_script(programmer, firmware, baudrate, wirelessbridge):
+    F = open(os.path.join('mlrs_flasher_runner.py'), 'w')
+    F.write('import os, time\n')
+    F.write('from mLRS_Flasher import _flash_esptool_argstr\n')
+    F.write('import edgetxInitPassthru as radio\n')
+    F.write('radioport = radio.open_passthrough(comport = None, baudrate = '+str(baudrate)+', wirelessbridge = '+str(wirelessbridge)+')\n')
+    F.write('print()\n')
+    F.write('print("*** 3. Flashing the internal Tx Module ***")\n')
+    F.write('print()\n')
+    F.write('print("The firmware to flash is:",'+_cvtstr(firmware)+')\n')
+    F.write("ESP_Programmer = os.path.join('thirdparty','esptool','esptool.py')\n")
+    F.write('args = _flash_esptool_argstr('+_cvtstr(programmer)+', '+_cvtstr(firmware)+', radioport, '+str(baudrate)+')\n')
+    F.write('os.system(ESP_Programmer + \' \' + args)\n')
+    F.write('print()\n')
+    F.write('print("*** DONE ***")\n')
+    F.write('print()\n')
+    F.write('print("Please remove the USB cable.")\n')
+    F.write('print("Cheers, and have fun.")\n')
+    F.write('os.system("pause")\n')
     F.close()
-    os_system('mlrs_flasher_runner.bat', pause=False)
+    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-#flash_internal_elrs_tx_module_win_as_bat('tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
+#flash_internal_elrs_tx_module_win_as_script('temp/tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
 #exit(1)
 
 
-def flashInternalElrsTxModule(programmer, firmware):
-    if os_system_run_as_bat():
-        print('Run on Windows as batch file')
-        flash_internal_elrs_tx_module_win_as_bat(firmware, wirelessbridge = False)
-        return # done
-
+def flash_internal_elrs_tx_module(programmer, firmware, baudrate, wirelessbridge):
     # firmware filename gives the complete path
     #print(filename)
     #print(programmer)
-    baudrate = 921600
-    radioport = radio.open_passthrough(comport = None, baudrate = baudrate, wirelessbridge = False)
+    radioport = radio.open_passthrough(comport = None, baudrate = baudrate, wirelessbridge = wirelessbridge)
 
     print()
     print('*** 3. Flashing the internal Tx Module ***')
     print()
     print('The firmware to flash is:', firmware)
 
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
     # TODO: can we catch if this was succesfull?
-    flash_esptool('esp32', os.path.join(temp_path, firmware), radioport, baudrate)
+    flash_esptool(programmer, firmware, radioport, baudrate)
 
     print()
     print('*** DONE ***')
     print()
     print('Please remove the USB cable.')
     print('Cheers, and have fun.')
+
+
+def flashInternalElrsTxModule(programmer, firmware):
+    if os_system_run_as_script():
+        #print('run as script file')
+        flash_internal_elrs_tx_module_win_as_script('esp32', firmware, baudrate = 921600, wirelessbridge = False)
+        return # done
+
+    flash_internal_elrs_tx_module('esp32', firmware, 921600, False)
 
 
 def flashInternalElrsTxModuleWirelessBridge(programmer, firmware):
-    if os_system_run_as_bat():
-        print('Run on Windows as batch file')
-        flash_internal_elrs_tx_module_win_as_bat(firmware, wirelessbridge = True)
+    if os_system_run_as_script():
+        #print('run as script file')
+        flash_internal_elrs_tx_module_win_as_script('esp8266', firmware, baudrate = 115200, wirelessbridge = True)
         return # done
 
-    #print(programmer)
-    baudrate = 115200
-    radioport = radio.open_passthrough(comport = None, baudrate = baudrate, wirelessbridge = True)
-
-    print()
-    print('*** 3. Flashing the wireless bridge of the internal Tx Module ***')
-    print()
-    print('The firmware to flash is:', firmware)
-
-    temp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'temp')
-    # TODO: can we catch if this was succesfull?
-    flash_esptool('esp8266', os.path.join(temp_path,firmware), radioport, baudrate)
-
-    print()
-    print('*** DONE ***')
-    print()
-    print('Please remove the USB cable.')
-    print('Cheers, and have fun.')
+    flash_internal_elrs_tx_module('esp8266', firmware, 115200, True)
 
 
 '''
