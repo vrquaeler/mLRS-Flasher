@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 9. Apr. 2025 001
+# 9. Apr. 2025 002
 #************************************************************
-app_version = '9.04.2025-001'
+app_version = '9.04.2025-002'
 
 import os, sys, time
 import subprocess
@@ -465,6 +465,8 @@ g_firmware_json_url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads
 g_repository_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/'
 # url to main branch
 g_main_branch_url = 'https://api.github.com/repos/olliw42/mLRS/git/trees/main'
+# url to wirelessbridge ino.bin
+g_wirelessbridge_path_url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge/'
 
 # cache for github downloads
 g_jsonCacheDict = {}
@@ -1010,8 +1012,9 @@ class App(ctk.CTk):
             baudrate = wireless['baud']
         else:
             baudrate = 921600
-        url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
+        #url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
         firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
+        url = g_wirelessbridge_path_url + firmware_filename
         flashDevice(programmer, url, firmware_filename, comport, baudrate)
 
     # calls flashDevice() for the selected device, firmware url, and filename, to initiate flashing
@@ -1075,8 +1078,9 @@ class App(ctk.CTk):
         print('ERROR: flashTxModuleInternalFirmware() [2]')
 
     def flashTxModuleInternalWirelessBridgeFirmware(self):
-        url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
+        #url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
         firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
+        url = g_wirelessbridge_path_url + firmware_filename
         flashDevice('wirelessbridge internal esp8285', url, firmware_filename)
 
 
