@@ -5,7 +5,7 @@
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 #************************************************************
 # Open passthrough to internal Tx module of EdgeTx/OpenTx radios
-# 1. Apr. 2025
+# 8. Apr. 2025
 #************************************************************
 
 import os, sys, time
@@ -133,8 +133,8 @@ def open_passthrough(comport = None, baudrate = 115200, wirelessbridge = None):
     time.sleep(1)
 
     if wirelessbridge:
-        print('Waiting for bridge configuration to complete')
-        time.sleep(10)
+        print('Waiting 7 secs for wireless bridge configuration to complete...')
+        time.sleep(7)
         
     res = execute_cli_command(ser, b'set rfmod 0 bootpin 1', expected = b'boot')
     if not res:

@@ -9,10 +9,11 @@ Link to the [mLRS project](https://github.com/olliw42/mLRS).
 
 ### Windows ###
 
-Download the file mLRS_Flasher.zip from the "app_windows" folder and store it to somewhere on your drive. Unpack it, and run mLRS_Flasher.exe.
+You have two options:
+- Download the file mLRS_Flasher.zip from the "app_windows" folder and store it to somewhere on your drive. Unpack it, and run mLRS_Flasher.exe. You can create a desktop shortcut to this file for easier access also. 
+- Download the github repo and run the mLRS_Flasher.py script. This requires that you have python3 and few required packages installed on your system.
 
-You can create a desktop shortcut to this file for easier access also.
-
+The advantage of the second method is that mLRS_Flasher operates a bit more userfriendly.
 
 ### MacOS ###
 

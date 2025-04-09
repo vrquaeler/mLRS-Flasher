@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 8. Apr. 2025 001
+# 9. Apr. 2025 001
 #************************************************************
-app_version = '8.04.2025-001'
+app_version = '9.04.2025-001'
 
 import os, sys, time
 import subprocess
@@ -49,10 +49,14 @@ def os_system(arg):
     res = os.system(arg)
     return res
 
+def os_popen(arg):
+    subprocess.Popen(arg, creationflags=subprocess.CREATE_NEW_CONSOLE)    
+
 def os_system_run_as_script():
-    return False # TODO: we currently don't do this as it conflicts with pyinstaller
+    #return False
     #return True
     if os.name == 'posix': return False
+    if getattr(sys, 'frozen', False): return False # don't do as it conflicts with pyinstaller
     return True
 
 def find_serial_ports():
@@ -106,7 +110,7 @@ def flash_stm32cubeprogrammer_win_as_script(programmer, firmware, comport, baudr
     F.write('print("Cheers, and have fun.")\n')
     F.write('os.system("pause")\n')
     F.close()
-    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    os_popen(['python','mlrs_flasher_runner.py'])
 
 
 def flash_stm32cubeprogrammer(programmer, firmware, comport, baudrate):
@@ -137,7 +141,7 @@ def flash_stm32cubeprogrammer_appassthru_win_as_script(serialx_no, firmware):
     F.write('print("Cheers, and have fun.")\n')
     F.write('os.system("pause")\n')
     F.close()
-    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    os_popen(['python','mlrs_flasher_runner.py'])
 
 
 def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
@@ -306,7 +310,7 @@ def flash_esptool_win_as_script(programmer, firmware, comport, baudrate):
     F.write('print("Cheers, and have fun.")\n')
     F.write('os.system("pause")\n')
     F.close()
-    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    os_popen(['python','mlrs_flasher_runner.py'])
 
 
 def flash_esptool(programmer, firmware, comport, baudrate):
@@ -333,7 +337,7 @@ def flash_esptool_appassthru_win_as_script(programmer, serialx_no, firmware):
     F.write('print("Cheers, and have fun.")\n')
     F.write('os.system("pause")\n')
     F.close()
-    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    os_popen(['python','mlrs_flasher_runner.py'])
 
 
 def flash_esptool_appassthru(programmer, serialx_no, firmware):
@@ -399,7 +403,7 @@ def flash_internal_elrs_tx_module_win_as_script(programmer, firmware, baudrate, 
     F.write('print("Cheers, and have fun.")\n')
     F.write('os.system("pause")\n')
     F.close()
-    subprocess.Popen(['python','mlrs_flasher_runner.py'], creationflags=subprocess.CREATE_NEW_CONSOLE)
+    os_popen(['python','mlrs_flasher_runner.py'])
 
 #flash_internal_elrs_tx_module_win_as_script('temp/tx-jumper-internal-900-v1.3.05-@28fe6be0.bin')
 #exit(1)
