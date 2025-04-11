@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 6. Apr. 2025
+# 9. Apr. 2025
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
