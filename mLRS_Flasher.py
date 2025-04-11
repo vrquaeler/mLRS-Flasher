@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 9. Apr. 2025 002
+# 11. Apr. 2025 001
 #************************************************************
-app_version = '9.04.2025-002'
+app_version = '11.04.2025-001'
 
 import os, sys, time
 import subprocess
@@ -47,7 +47,8 @@ def create_dir(path):
 
 def os_system(arg):
     res = os.system(arg)
-    return res
+    if res != 0:
+        print("ERROR: os system res =", res)
 
 def os_popen(arg):
     subprocess.Popen(arg, creationflags=subprocess.CREATE_NEW_CONSOLE)    
@@ -129,9 +130,11 @@ def flash_stm32cubeprogrammer_appassthru_win_as_script(serialx_no, firmware):
     F.write('import os, time\n')
     F.write('from mLRS_Flasher import _flash_stm32cubeprogrammer_argstr\n')
     F.write('import apInitPassthru as appassthru\n')
+    F.write("print('opening passthru...')\n")
     F.write('comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, ' + str(serialx_no) + ')\n')
     F.write("print('waiting for 5 secs...')\n")
     F.write('time.sleep(5.0)\n')
+    F.write("print('flashing...')\n")
     F.write("ST_Programmer = os.path.join('thirdparty','STM32CubeProgrammer','win','bin','STM32_Programmer_CLI.exe')\n")
     F.write('args = _flash_stm32cubeprogrammer_argstr("uart", '+_cvtstr(firmware)+', comport, baudrate)\n')
     F.write('os.system(ST_Programmer + \' \' + args)\n')
@@ -145,10 +148,12 @@ def flash_stm32cubeprogrammer_appassthru_win_as_script(serialx_no, firmware):
 
 
 def flash_stm32cubeprogrammer_appassthru(serialx_no, firmware):
+    print('opening passthru...')
     comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, serialx_no)
     #TODO: add a way to gracefully jump out in case of an error
     print('waiting for 5 secs...')
     time.sleep(5.0)
+    print('flashing...')
     flash_stm32cubeprogrammer('uart', firmware, comport, baudrate)
 
 
@@ -325,9 +330,11 @@ def flash_esptool_appassthru_win_as_script(programmer, serialx_no, firmware):
     F.write('import os, time\n')
     F.write('from mLRS_Flasher import _flash_esptool_argstr\n')
     F.write('import apInitPassthru as appassthru\n')
+    F.write("print('opening passthru...')\n")
     F.write('comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, ' + str(serialx_no) + ', ["nosysboot", "scripting"])\n')
     F.write("print('waiting for 5 secs...')\n")
     F.write('time.sleep(5.0)\n')
+    F.write("print('flashing...')\n")
     F.write("ESP_Programmer = os.path.join('thirdparty','esptool','esptool.py')\n")
     F.write('args = _flash_esptool_argstr('+_cvtstr(programmer)+', '+_cvtstr(firmware)+', comport, baudrate)\n')
     F.write('os.system(ESP_Programmer + \' \' + args)\n')
@@ -341,10 +348,12 @@ def flash_esptool_appassthru_win_as_script(programmer, serialx_no, firmware):
 
 
 def flash_esptool_appassthru(programmer, serialx_no, firmware):
+    print('opening passthru...')
     comport, baudrate = appassthru.mlrs_open_passthrough(None, 57600, serialx_no, ['nosysboot', 'scripting'])
     #TODO: add a way to gracefully jump out in case of an error
     print('waiting for 5 secs...')
     time.sleep(5.0)
+    print('flashing...')
     flash_esptool(programmer, firmware, comport, baudrate)
 
 

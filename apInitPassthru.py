@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 9. Apr. 2025
+# 11. Apr. 2025
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
@@ -215,7 +215,9 @@ def ardupilot_set_scripting(link, serialx):
     mavparm.MAVParmDict().mavset(link, param_str, 28)
     time.sleep(0.5) # wait a bit
     link.close()
-    do_msg('\r\nPlease unplug USB and hold receiver boot button down while plugging in USB.\r\nWait until USB is re-enumerated and flight controller has booted up.')
+    do_msg(
+        '\r\nPlease unplug USB and hold receiver boot button down while plugging in USB.\r\n' + 
+        'Wait until USB is re-enumerated and flight controller has booted up (typically 10-20 secs).')
 
 
 #--------------------------------------------------
