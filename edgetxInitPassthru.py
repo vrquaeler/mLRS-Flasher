@@ -5,7 +5,7 @@
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 #************************************************************
 # Open passthrough to internal Tx module of EdgeTx/OpenTx radios
-# 8. Apr. 2025
+# 19. Apr. 2025
 #************************************************************
 
 import os, sys, time
@@ -26,7 +26,7 @@ def find_radio_serial_ports():
         portList = list(comports())
     except:
         print('ERROR: find_radio_serial_port() [1]')
-        return None
+        return []
     radioportList = []
     for port in portList:
         if port.vid == 0x0483 and port.pid == 0x5740:
