@@ -5,7 +5,7 @@
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 #************************************************************
 # Open passthrough to internal Tx module of EdgeTx/OpenTx radios
-# 19. Apr. 2025
+# 20. Apr. 2025
 #************************************************************
 
 import os, sys, time
@@ -25,7 +25,7 @@ def find_radio_serial_ports():
         from serial.tools.list_ports import comports
         portList = list(comports())
     except:
-        print('ERROR: find_radio_serial_port() [1]')
+        print('ERROR: find_radio_serial_port() (pyserial missing?) [1]')
         return []
     radioportList = []
     for port in portList:
@@ -77,7 +77,7 @@ def find_radioport():
         do_msg("Please power up your radio, connect the USB, and select 'USB Serial (VCP)'.")
         radioports_list = find_radio_serial_ports()
         if len(radioports_list) != 1:
-            do_error('Sorry, something went wrong and we could not find the com port of your radio.')
+            do_error('Sorry, something went wrong, the com port of your radio could not be found.')
     radioport = radioports_list[0]
     print('Your radio is on com port', radioport)
     return radioport
@@ -98,7 +98,7 @@ def open_passthrough(comport = None, baudrate = 115200, wirelessbridge = None):
         s = serial.Serial(radioport)
         s.close()
     except:
-        do_error('Sorry, something went wrong and we could not open the com port of your radio.')
+        do_error('Sorry, something went wrong, the com port of your radio could not be opened. (pyserial missing?)')
 
     print()
     print('*** 2. Opening passthrough to the internal Tx Module ***')

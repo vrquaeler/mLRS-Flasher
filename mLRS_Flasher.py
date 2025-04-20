@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 11. Apr. 2025 001
+# 20. Apr. 2025 001
 #************************************************************
-app_version = '11.04.2025-001'
+app_version = '20.04.2025-001'
 
 import os, sys, time
 import subprocess
@@ -65,7 +65,7 @@ def find_serial_ports():
         from serial.tools.list_ports import comports
         portList = list(comports())
     except:
-        print('ERROR: find_serial_ports() [1]')
+        print('ERROR: find_serial_ports() (pyserial missing?) [1]')
         return None
     deviceportList = []
     for port in portList:
@@ -200,7 +200,7 @@ def find_serial_ports_esp_tx_devices():
         from serial.tools.list_ports import comports
         portList = list(comports())
     except:
-        print('ERROR: find_serial_ports_esp_tx_devices() [1]')
+        print('ERROR: find_serial_ports_esp_tx_devices() (pyserial missing?) [1]')
         return None
     deviceportList = []
     for port in portList:
@@ -223,7 +223,7 @@ def find_serial_ports_usbttl_devices():
         from serial.tools.list_ports import comports
         portList = list(comports())
     except:
-        print('ERROR: find_serial_ports_usbttl_devices() [1]')
+        print('ERROR: find_serial_ports_usbttl_devices() (pyserial missing?) [1]')
         return None
     deviceportList = []
     for port in portList:

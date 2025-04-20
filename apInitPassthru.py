@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 19. Apr. 2025
+# 20. Apr. 2025
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
@@ -53,7 +53,7 @@ def find_ardupilot_serial_ports():
         from serial.tools.list_ports import comports
         portList = list(comports())
     except:
-        print('ERROR: find_radio_serial_port() [1]')
+        print('ERROR: find_radio_serial_port() (pyserial missing?) [1]')
         return []
     '''
     for port in portList:
