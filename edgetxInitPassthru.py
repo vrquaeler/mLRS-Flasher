@@ -4,9 +4,10 @@
 # GPL3
 # https://www.gnu.org/licenses/gpl-3.0.de.html
 #************************************************************
-# Open passthrough to internal Tx module of EdgeTx/OpenTx radios
-# 20. Apr. 2025
+# Open passthrough to internal Tx module of EdgeTx radios
+# 3. Mai. 2025
 #************************************************************
+# Comment: does not work with OpenTx
 
 import os, sys, time
 import argparse
@@ -31,7 +32,7 @@ def find_radio_serial_ports():
     for port in portList:
         if port.vid == 0x0483 and port.pid == 0x5740:
             if os.name == 'posix': # we do have more info on this os
-                if port.manufacturer == 'EdgeTX' or port.manufacturer == 'OpenTX':
+                if port.manufacturer == 'EdgeTX':
                     radioportList.append(port.device)
             else:
                 radioportList.append(port.device)
@@ -166,7 +167,7 @@ def open_passthrough(comport = None, baudrate = 115200, wirelessbridge = None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description = 'Initialize EdgeTX/OpenTx passthrough to internal Tx module'
+        description = 'Initialize EdgeTX passthrough to internal Tx module'
         )
     parser.add_argument("-c", "--com", help="Com port for passthrough communication. Examples: com5, /dev/ttyACM0")
     parser.add_argument("-b", "--baud", type=int, default=115200, help = 'Baudrate for passthrough communication')
