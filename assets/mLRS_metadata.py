@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Meta Data for mLRS Flasher Desktop App
-# 12. Apr. 2025 001
+# 4. Mai. 2025 001
 #************************************************************
 
 
@@ -21,7 +21,7 @@ g_txModuleExternalDeviceTypeDict = {
     'Wio E5' :         { 'fname' : 'tx-Wio-E5',      'chipset' : 'stm32' },
     'E77 MBL Kit' :    { 'fname' : 'tx-E77-MBLKit',  'chipset' : 'stm32' },
     'Easysolder' :     { 'fname' : 'tx-easysolder',  'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'tx-FRM303',      'chipset' : 'stm32' },
+#    'FlySky FRM 303' : { 'fname' : 'tx-FRM303',      'chipset' : 'stm32' },
     'RadioMaster' :    { 'fname' : 'tx-radiomaster', 'chipset' : 'esp32' },
     'BetaFPV' :        { 'fname' : 'tx-betafpv',     'chipset' : 'esp32' },
 }
@@ -32,7 +32,7 @@ g_receiverDeviceTypeDict = {
     'Wio E5' :         { 'fname' : 'rx-Wio-E5',      'chipset' : 'stm32' },
     'E77 MBL Kit' :    { 'fname' : 'rx-E77-MBLKit',  'chipset' : 'stm32' },
     'Easysolder' :     { 'fname' : 'rx-easysolder',  'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'rx-FRM303',      'chipset' : 'stm32' },
+#    'FlySky FRM 303' : { 'fname' : 'rx-FRM303',      'chipset' : 'stm32' },
     'RadioMaster' :    { 'fname' : 'rx-radiomaster', 'chipset' : 'espxx' }, #esp8285, esp32, esp32c3
     'BetaFPV' :        { 'fname' : 'rx-betafpv',     'chipset' : 'esp32' },
     'Bayck' :          { 'fname' : 'rx-bayck',       'chipset' : 'esp8285' },
@@ -108,9 +108,9 @@ g_targetDict = {
         #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
-    'tx-FRM303' : {
-        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
-    },
+#    'tx-FRM303' : {
+#        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
+#    },
 
     # esp32 tx module defaults
     # - 'flashmethod' : esptool with 'esp32'
@@ -235,9 +235,9 @@ g_targetDict = {
         #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
-    'rx-FRM303' : {
-        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
-    },
+#    'rx-FRM303' : {
+#        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
+#    },
 
     # esp defaults:
     # - 'flashmethod' : 'esptool,appassthru'
