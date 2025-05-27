@@ -3,6 +3,7 @@ mlrs_flasher_runner.bat
 mlrs_flasher_runner.py
 z_cmd.bat
 temp/*
+local/*
 venv/*
 build/*
 dist/*

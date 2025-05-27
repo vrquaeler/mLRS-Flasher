@@ -703,8 +703,9 @@ def flashDevice(programmer, url, filename, comport=None, baudrate=None):
         print('ERROR: flashDevice() [1]')
         return
     #print(os.path.dirname(os.path.abspath(__file__)))
-    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'temp',filename)
-    #print(filepath)
+    #filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'temp',filename)
+    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)),'local',filename)
+    print(filepath)
     if 'wirelessbridge' in programmer:
         # handle WirelessBridge
         if 'internal' in programmer:
