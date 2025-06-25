@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 20. Apr. 2025
+# 25. June. 2025
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
@@ -122,7 +122,10 @@ def mav_recv_match(link, msg_type, timeout=1.0):
         if msg is not None and msg.get_type() == msg_type:
             msgd = msg.to_dict()
             #print(msgd)
-            break
+            if msg_type != 'HEARTBEAT':
+                break
+            elif msgd['type'] == 1 and msgd['autopilot'] == 3: # we ask for HEARTBEAT, so want it to be from the autopilot
+                break
         tnow = time.time()
         if tnow - tstart > timeout:
             break
@@ -144,11 +147,13 @@ def ardupilot_connect(uart, baud):
         link.close()
         return None
     print(' ', msg)
+    # needs to be set, if system is only a fc link targets come out as (1,0), if it has more components as (0,0)!!
+    link.target_system = msg.get_srcSystem()
+    link.target_component = msg.get_srcComponent()
     msg, msgd = mav_recv_match(link, 'HEARTBEAT', timeout=2.5) # let's wait for a 2nd one to be sure
     if not msgd:
         link.close()
         return None
-    # note: link targets appear to always come out as 1,0
     print('  received (sysid %u compid %u)' % (link.target_system, link.target_component))
     print('connected to flight controller')
     return link
