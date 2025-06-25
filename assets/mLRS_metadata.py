@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Meta Data for mLRS Flasher Desktop App
-# 4. Mai. 2025 001
+# 25. June. 2025
 #************************************************************
 
 
@@ -77,7 +77,8 @@ description_esp_esptool_uart_default = (
     )
 
 description_ap_passthru_default = (
-    "In addition flashing via ArduPilot passthrough is supported.\n"
+    "In addition flashing via ArduPilot passthrough is supported:\n" +
+    "  - follow the instructions in the console\n"
     )
 
 
