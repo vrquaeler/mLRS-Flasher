@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # Open passthrough to receiver on ArduPilot systems
-# 25. June. 2025
+# 15. Nov. 2025
 #************************************************************
 # Does this:
 # - opens serial passthrough in ArduPilot flight controller
@@ -124,7 +124,10 @@ def mav_recv_match(link, msg_type, timeout=1.0):
             #print(msgd)
             if msg_type != 'HEARTBEAT':
                 break
-            elif msgd['type'] == 1 and msgd['autopilot'] == 3: # we ask for HEARTBEAT, so want it to be from the autopilot
+#BUG??            elif msgd['type'] == 1 and msgd['autopilot'] == 3: # we ask for HEARTBEAT, so want it to be from the autopilot
+            elif msg.get_srcComponent() == 1 and msgd['autopilot'] == 3: # we ask for HEARTBEAT, so want it to be from the autopilot
+                # srcComponent = 1: MAV_COMP_ID_AUTOPILOT1
+                # autopilot = 3: MAV_AUTOPILOT_ARDUPILOTMEGA
                 break
         tnow = time.time()
         if tnow - tstart > timeout:
