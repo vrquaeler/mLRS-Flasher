@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 15. Nov. 2025 001
+# 29. Nov. 2025 001
 #************************************************************
-app_version = '15.11.2025-001'
+app_version = '29.11.2025-001'
 
 import os, sys, time
 import subprocess
@@ -212,8 +212,10 @@ def find_serial_ports_esp_tx_devices():
             continue
         if port.vid == 0x1209 and (port.pid == 0x5740 or port.pid == 0x5741): # this is ArduPilot
             continue
-        if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
-            continue
+# we support the RP4TD, which requires using a USB-TTL adapter
+# but the user may not use a CP21x device
+#        if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
+#            continue
         deviceportList.append(port.device)
     return deviceportList
 
@@ -1505,15 +1507,6 @@ class App(ctk.CTk):
         self.fTxModuleExternal_Description_textbox.setText("downloading metadata...\n")
         #self.fTxModuleExternal_Description_textbox.grid_remove()
 
-    def fTxModuleExternal_ComPort_HandleIt(self):
-        device_type = self.fTxModuleExternal_DeviceType_menu.get()
-        chipset = self.txDeviceTypeDict[device_type]['chipset']
-        if 'stm32' in chipset:
-            self.fTxModuleExternal_ComPort_menu.grid_remove()
-        elif 'esp32' in chipset:
-            self.fTxModuleExternal_ComPort_menu.update()
-            self.fTxModuleExternal_ComPort_menu.grid()
-
     def fTxModuleExternal_UpdateWidgets(self):
         device_type = self.fTxModuleExternal_DeviceType_menu.get()
         firmware_filename = self.fTxModuleExternal_FirmwareFile_menu.get()
@@ -1532,6 +1525,15 @@ class App(ctk.CTk):
             self.fTxModuleExternal_Description_textbox.setText(text, tag)
         else:
             self.fTxModuleExternal_Description_textbox.grid_remove()
+
+    def fTxModuleExternal_ComPort_HandleIt(self):
+        device_type = self.fTxModuleExternal_DeviceType_menu.get()
+        chipset = self.txDeviceTypeDict[device_type]['chipset']
+        if 'stm32' in chipset:
+            self.fTxModuleExternal_ComPort_menu.grid_remove()
+        elif 'esp32' in chipset:
+            self.fTxModuleExternal_ComPort_menu.update()
+            self.fTxModuleExternal_ComPort_menu.grid()
 
     def fTxModuleExternal_Startup(self):
         res = self.updateTxModuleExternalFirmwareFiles()
