@@ -6,7 +6,7 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Meta Data for mLRS Flasher Desktop App
-# 12. Apr. 2025 001
+# 29. Nov. 2025
 #************************************************************
 
 
@@ -21,7 +21,7 @@ g_txModuleExternalDeviceTypeDict = {
     'Wio E5' :         { 'fname' : 'tx-Wio-E5',      'chipset' : 'stm32' },
     'E77 MBL Kit' :    { 'fname' : 'tx-E77-MBLKit',  'chipset' : 'stm32' },
     'Easysolder' :     { 'fname' : 'tx-easysolder',  'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'tx-FRM303',      'chipset' : 'stm32' },
+#    'FlySky FRM 303' : { 'fname' : 'tx-FRM303',      'chipset' : 'stm32' },
     'RadioMaster' :    { 'fname' : 'tx-radiomaster', 'chipset' : 'esp32' },
     'BetaFPV' :        { 'fname' : 'tx-betafpv',     'chipset' : 'esp32' },
 }
@@ -32,7 +32,7 @@ g_receiverDeviceTypeDict = {
     'Wio E5' :         { 'fname' : 'rx-Wio-E5',      'chipset' : 'stm32' },
     'E77 MBL Kit' :    { 'fname' : 'rx-E77-MBLKit',  'chipset' : 'stm32' },
     'Easysolder' :     { 'fname' : 'rx-easysolder',  'chipset' : 'stm32' },
-    'FlySky FRM 303' : { 'fname' : 'rx-FRM303',      'chipset' : 'stm32' },
+#    'FlySky FRM 303' : { 'fname' : 'rx-FRM303',      'chipset' : 'stm32' },
     'RadioMaster' :    { 'fname' : 'rx-radiomaster', 'chipset' : 'espxx' }, #esp8285, esp32, esp32c3
     'BetaFPV' :        { 'fname' : 'rx-betafpv',     'chipset' : 'esp32' },
     'Bayck' :          { 'fname' : 'rx-bayck',       'chipset' : 'esp8285' },
@@ -77,7 +77,8 @@ description_esp_esptool_uart_default = (
     )
 
 description_ap_passthru_default = (
-    "In addition flashing via ArduPilot passthrough is supported.\n"
+    "In addition flashing via ArduPilot passthrough is supported:\n" +
+    "  - follow the instructions in the console\n"
     )
 
 
@@ -108,9 +109,9 @@ g_targetDict = {
         #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
-    'tx-FRM303' : {
-        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
-    },
+#    'tx-FRM303' : {
+#        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
+#    },
 
     # esp32 tx module defaults
     # - 'flashmethod' : esptool with 'esp32'
@@ -147,6 +148,20 @@ g_targetDict = {
                 'baud' : 115200,
             },
         },
+        'tx-radiomaster-nomad' : {
+            'description' :
+                "Flash method: connect to USB (select COM port)\n" +
+                "\nWireless bridge: ESP32C3\n" +
+                "For flashing the wireless bridge: \n" +
+                "  - set 'Tx Ser Dest' to serial2\n" +
+                "  - set 'Tx Ser Baudrate' to 115200\n" +
+                "  - put Tx module into FLASH_ESP by holding button located under the 'T' in RadioMaster for 4 seconds\n",
+            'wireless' : {
+                'chipset' : 'esp32c3',
+                'reset' : 'no dtr',
+                'baud' : 115200,
+            },
+        },
         'tx-radiomaster-ranger' : {
             'description' :
                 "Flash method: connect to USB (select COM port)\n" +
@@ -171,7 +186,7 @@ g_targetDict = {
     #--------------------
     # esp32 internal tx module defaults
     # - 'flashmethod' : ...
-    # - wireless-bridge: they all currently use a esp8285 backpack, and use the same wirelesss-bridge flash method
+    # - wireless-bridge: can be a esp8285 or esp32c3 backpack, they all use the same wirelesss-bridge flash method
     'tx-jumper-internal' : {
         'description' :
             "Supported radios: T20 V2, T15, T14, T-Pro S\n" +
@@ -200,6 +215,32 @@ g_targetDict = {
         'tx-radiomaster-internal-2400' : {
         },
         'tx-radiomaster-internal-boxer' : {
+        },
+        'tx-radiomaster-internal-tx15' : {
+            'description' :
+                "Supported radios: TX15\n" +
+                "Flash method: radio passthrough\n" +
+                "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+                "\nWireless bridge: ESP32C3\n" +
+                "For flashing the wireless bridge:\n" +
+                "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
+            'wireless' : {
+                'chipset' : 'esp32c3',
+                'baud' : 115200,
+            },
+        },
+        'tx-radiomaster-internal-gx12' : {
+            'description' :
+                "Supported radios: GX12\n" +
+                "Flash method: radio passthrough\n" +
+                "  - connect to USB of your radio and select 'USB Serial (VCP)'\n" +
+                "\nWireless bridge: ESP32C3\n" +
+                "For flashing the wireless bridge:\n" +
+                "  - connect to USB of your radio and select 'USB Serial (VCP)'\n",
+            'wireless' : {
+                'chipset' : 'esp32c3',
+                'baud' : 115200,
+            },
         },
     },
 
@@ -235,9 +276,9 @@ g_targetDict = {
         #'flashmethod' : 'stlink',
         'description' : description_stm32_stlink_default,
     },
-    'rx-FRM303' : {
-        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
-    },
+#    'rx-FRM303' : {
+#        'description' : description_stm32_stlink_default + "mLRS Flasher currently only supports STLink.\nPlease see docs for more details.\n",
+#    },
 
     # esp defaults:
     # - 'flashmethod' : 'esptool,appassthru'
@@ -250,10 +291,10 @@ g_targetDict = {
         'rx-radiomaster-rp4td-2400' : {
             'chipset' : 'esp32',
         },
-        'rx-radiomaster-xr1-900' : {
+        'rx-radiomaster-xr1' : {
             'chipset' : 'esp32c3',
         },
-        'rx-radiomaster-xr4-900' : {
+        'rx-radiomaster-xr4' : {
             'chipset' : 'esp32',
         },
     },

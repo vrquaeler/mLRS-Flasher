@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 3. Mai. 2025 001
+# 29. Nov. 2025 001
 #************************************************************
-app_version = '3.05.2025-001'
+app_version = '29.11.2025-001'
 
 import os, sys, time
 import subprocess
@@ -51,7 +51,7 @@ def os_system(arg):
         print("ERROR: os system res =", res)
 
 def os_popen(arg):
-    subprocess.Popen(arg, creationflags=subprocess.CREATE_NEW_CONSOLE)    
+    subprocess.Popen(arg, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 def os_system_run_as_script():
     #return False
@@ -208,12 +208,14 @@ def find_serial_ports_esp_tx_devices():
             continue
         if port.vid == 0x0483 and port.pid == 0x374E: # this is STLink
             continue
-        if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx
+        if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx, vid registered via pidcodes, so unique
             continue
         if port.vid == 0x1209 and (port.pid == 0x5740 or port.pid == 0x5741): # this is ArduPilot
             continue
-        if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
-            continue
+# we support the RP4TD, which requires using a USB-TTL adapter
+# but the user may not use a CP21x device
+#        if 'CP210' not in port.description: # was 'Silicon Labs CP210x', gave issues on nix
+#            continue
         deviceportList.append(port.device)
     return deviceportList
 
@@ -231,7 +233,7 @@ def find_serial_ports_usbttl_devices():
             continue
         if port.vid == 0x0483 and port.pid == 0x374E: # this is STLink
             continue
-        if port.vid == 0x0483 and port.pid == 0x5740: # this is EdgeTx/OpenTx
+        if port.vid == 0x0483 and port.pid == 0x5740:  # this is EdgeTx/OpenTx, vid registered via pidcodes, so unique
             continue
         if port.vid == 0x1209 and (port.pid == 0x5740 or port.pid == 0x5741): # this is ArduPilot
             continue
@@ -241,12 +243,16 @@ def find_serial_ports_usbttl_devices():
 
 def _flash_esptool_argstr(programmer, firmware, comport, baudrate):
     assets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'assets')
-    if 'esp32c3' in programmer: # must come before we test for 'eps32'!
+    if 'no dtr' in programmer:
+        before_arg = '--before no_reset'
+    else:
+        before_arg = '--before default_reset'
+    if 'esp32c3' in programmer: # must come before we test for 'esp32'!
         args = (
             '--chip esp32c3 ' +
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
-            '--before default_reset --after hard_reset ' +
+            before_arg + ' --after hard_reset ' +
             'write_flash ' +
             '-z ' +
             '--flash_mode dio --flash_freq 40m --flash_size 4MB ' +
@@ -260,16 +266,24 @@ def _flash_esptool_argstr(programmer, firmware, comport, baudrate):
             '"' + firmware + '"'
             )
     elif 'esp32' in programmer:
+        # flash was changed to 80 MHz QIO with this PR: https://github.com/olliw42/mLRS/pull/320
+        # observed that the code will still run but flash writes fail with older bootloader
+        firmware_version = int(''.join(re.search(r'v(\d+\.\d+\.\d+)', os.path.basename(firmware)).group(1).split('.')))
+        if firmware_version >= 1307:
+            bootloader_file = 'bootloader_80qio.bin'
+        else:
+            bootloader_file = 'bootloader_40dio.bin'
+        #print(firmware_version, bootloader_file)
         args = (
             '--chip esp32 ' +
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
-            '--before default_reset --after hard_reset ' +
+            before_arg + ' --after hard_reset ' +
             'write_flash ' +
             '-z ' +
             '--flash_mode dio --flash_freq 40m --flash_size 4MB ' +
             '0x1000  ' +
-            '"' + os.path.join(assets_path,'esp32','bootloader.bin') + '" ' +
+            '"' + os.path.join(assets_path,'esp32', bootloader_file) + '" ' +
             '0x8000 ' +
             '"' + os.path.join(assets_path,'esp32','partitions.bin') + '" ' +
             '0xe000 ' +
@@ -277,22 +291,12 @@ def _flash_esptool_argstr(programmer, firmware, comport, baudrate):
             '0x10000 ' +
             '"' + firmware + '"'
             )
-    elif ('esp8266' in programmer or 'esp8285' in programmer) and 'no dtr' in programmer:
+    elif ('esp8266' in programmer or 'esp8285' in programmer):
         args = (
             '--chip esp8266 ' +
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
-            '--before no_reset --after soft_reset ' +
-            'write_flash ' +
-            '0x0 ' +
-            '"' + firmware + '"'
-            )
-    elif ('esp8266' in programmer or 'esp8285' in programmer): # 'dtr'
-        args = (
-            '--chip esp8266 ' +
-            '--port "' + comport + '" ' +
-            '--baud ' + str(baudrate) + ' ' +
-            '--before default_reset --after hard_reset ' +
+            before_arg + ' --after hard_reset ' +
             'write_flash ' +
             '0x0 ' +
             '"' + firmware + '"'
@@ -716,6 +720,9 @@ def flashDevice(programmer, url, filename, comport=None, baudrate=None):
             if ('esp8266' in programmer or 'esp8285' in programmer):
                 flashEspToolProgrammer(programmer, filepath, comport, baudrate)
                 return
+            elif ('esp32c3' in programmer):
+                flashEspToolProgrammer(programmer, filepath, comport, baudrate)
+                return
     elif 'stm32' in programmer:
         # STM32
         flashSTM32CubeProgrammer(programmer, filepath, comport, baudrate)
@@ -1023,7 +1030,10 @@ class App(ctk.CTk):
         else:
             baudrate = 921600
         #url = 'https://raw.githubusercontent.com/olliw42/mLRS/refs/heads/main/firmware/wirelessbridge-esp8266/mlrs-wireless-bridge-esp8266.ino.bin'
-        firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
+        if 'esp32c3' in programmer: # the wireless chipset is in wireless['chipset'], not chipset, so we test programmer to catch the fallback
+            firmware_filename = 'mlrs-wireless-bridge-esp32c3.ino.bin'
+        else:
+            firmware_filename = 'mlrs-wireless-bridge-esp8266.ino.bin'
         url = g_wirelessbridge_path_url + firmware_filename
         flashDevice(programmer, url, firmware_filename, comport, baudrate)
 
@@ -1498,15 +1508,6 @@ class App(ctk.CTk):
         self.fTxModuleExternal_Description_textbox.setText("downloading metadata...\n")
         #self.fTxModuleExternal_Description_textbox.grid_remove()
 
-    def fTxModuleExternal_ComPort_HandleIt(self):
-        device_type = self.fTxModuleExternal_DeviceType_menu.get()
-        chipset = self.txDeviceTypeDict[device_type]['chipset']
-        if 'stm32' in chipset:
-            self.fTxModuleExternal_ComPort_menu.grid_remove()
-        elif 'esp32' in chipset:
-            self.fTxModuleExternal_ComPort_menu.update()
-            self.fTxModuleExternal_ComPort_menu.grid()
-
     def fTxModuleExternal_UpdateWidgets(self):
         device_type = self.fTxModuleExternal_DeviceType_menu.get()
         firmware_filename = self.fTxModuleExternal_FirmwareFile_menu.get()
@@ -1525,6 +1526,15 @@ class App(ctk.CTk):
             self.fTxModuleExternal_Description_textbox.setText(text, tag)
         else:
             self.fTxModuleExternal_Description_textbox.grid_remove()
+
+    def fTxModuleExternal_ComPort_HandleIt(self):
+        device_type = self.fTxModuleExternal_DeviceType_menu.get()
+        chipset = self.txDeviceTypeDict[device_type]['chipset']
+        if 'stm32' in chipset:
+            self.fTxModuleExternal_ComPort_menu.grid_remove()
+        elif 'esp32' in chipset:
+            self.fTxModuleExternal_ComPort_menu.update()
+            self.fTxModuleExternal_ComPort_menu.grid()
 
     def fTxModuleExternal_Startup(self):
         res = self.updateTxModuleExternalFirmwareFiles()
