@@ -160,6 +160,7 @@ g_targetDict = {
                 'chipset' : 'esp32c3',
                 'reset' : 'no dtr',
                 'baud' : 115200,
+                'erase' : 'full_erase',
             },
         },
         'tx-radiomaster-ranger' : {
@@ -227,6 +228,7 @@ g_targetDict = {
             'wireless' : {
                 'chipset' : 'esp32c3',
                 'baud' : 115200,
+                'erase' : 'full_erase',
             },
         },
         'tx-radiomaster-internal-gx12' : {
@@ -240,6 +242,7 @@ g_targetDict = {
             'wireless' : {
                 'chipset' : 'esp32c3',
                 'baud' : 115200,
+                'erase' : 'full_erase',
             },
         },
     },
