@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 29. Nov. 2025 001
+# 30. Nov. 2025 001
 #************************************************************
-app_version = '29.11.2025-001'
+app_version = '30.11.2025-001'
 
 import os, sys, time
 import subprocess
@@ -257,7 +257,7 @@ def _flash_esptool_argstr(programmer, firmware, comport, baudrate):
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
             before_arg + ' --after hard_reset ' +
-            'write_flash ' + erase_arg + 
+            'write_flash ' + erase_arg +
             '-z ' +
             '--flash_mode dio --flash_freq 40m --flash_size 4MB ' +
             '0x0000 ' +
@@ -283,7 +283,7 @@ def _flash_esptool_argstr(programmer, firmware, comport, baudrate):
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
             before_arg + ' --after hard_reset ' +
-            'write_flash ' + erase_arg + 
+            'write_flash ' + erase_arg +
             '-z ' +
             '--flash_mode dio --flash_freq 40m --flash_size 4MB ' +
             '0x1000  ' +
@@ -301,7 +301,7 @@ def _flash_esptool_argstr(programmer, firmware, comport, baudrate):
             '--port "' + comport + '" ' +
             '--baud ' + str(baudrate) + ' ' +
             before_arg + ' --after hard_reset ' +
-            'write_flash ' + erase_arg + 
+            'write_flash ' + erase_arg +
             '0x0 ' +
             '"' + firmware + '"'
             )
