@@ -224,7 +224,7 @@ def ardupilot_set_scripting(link, serialx):
     time.sleep(0.5) # wait a bit
     link.close()
     do_msg(
-        '\r\nPlease unplug USB and hold receiver boot button down while plugging in USB.\r\n' + 
+        '\r\nPlease unplug USB and hold receiver boot button down while plugging in USB.\r\n' +
         'Wait until USB is re-enumerated and flight controller has booted up (typically 10-20 secs).')
 
 
