@@ -6,9 +6,9 @@
 # OlliW @ www.olliw.eu
 #************************************************************
 # mLRS Flasher Desktop App
-# 30. Nov. 2025 001
+# 4. Dez. 2025 001
 #************************************************************
-app_version = '30.11.2025-001'
+app_version = '4.12.2025-001'
 
 import os, sys, time
 import subprocess
