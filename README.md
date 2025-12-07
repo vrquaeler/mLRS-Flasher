@@ -9,7 +9,7 @@ Link to the [mLRS project](https://github.com/olliw42/mLRS).
 
 ### Windows ###
 
-mLRSFlasher is based on Python, and thus needs a full Python3 installation on your system. Not very Win-like, we know, and we appologize for this. 
+mLRS-Flasher is based on Python, and thus needs a full Python3 installation on your system. Not very Win-like, we know, and we appologize for this. 
 
 - Install Python3 on your system, if you haven't done so already. Make sure that Python is added to the PATH (***this is crucial!***).
      - ***Note***: Most Python installers include a check box to add Python to the path during installation; don't miss it.
@@ -17,7 +17,7 @@ mLRSFlasher is based on Python, and thus needs a full Python3 installation on yo
 - Download the mLRS-Flasher GitHub repository, and make sure to extract (unpack) it if you downloaded it as a zip file.
 - Run the mLRS_Flasher.py script.
     - ***Note***: mLRS_Flasher needs the rights to write to disk and modify files on disk.
-- Depending on your Python distribution, you may need to install additional packages. To determine which ones are missing, run the mLRS-Flasher.py script in a console and check the error messages; they will indicate which package is required. Install the missing package, then run the script again, until success.
+- Depending on your Python distribution, you may need to install additional packages. To determine which ones are missing, run the mLRS_Flasher.py script in the Windows cmd console and check the error messages; they will indicate which package is required. Install the missing package, then run the script again, until success.
 
 ### MacOS ###
 
