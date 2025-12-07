@@ -14,6 +14,7 @@ mLRS-Flasher is based on Python, and thus needs a full Python3 installation on y
 - Install Python3 on your system, if you haven't done so already. Make sure that Python is added to the PATH (***this is crucial!***).
      - ***Note***: Most Python installers include a check box to add Python to the path during installation; don't miss it.
 - You need some additional Python packages, namely "pillow", "requests", "pyserial", "customtkinter", "tk", "pymavlink". Run this command to install them: `pip install pillow requests pyserial customtkinter tk pymavlink`.
+     - ***Note***: "Pyserial", not "serial"!
 - Download the mLRS-Flasher GitHub repository, and make sure to extract (unpack) it if you downloaded it as a zip file.
 - Run the mLRS_Flasher.py script.
     - ***Note***: mLRS_Flasher needs the rights to write to disk and modify files on disk.
